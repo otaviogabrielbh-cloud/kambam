@@ -61,6 +61,13 @@ npm run build
 npx firebase-tools deploy --only hosting --project kambam-57c9e
 ```
 
+## Deploy no GitHub Pages
+
+O workflow `.github/workflows/pages.yml` publica o app em
+`https://SEU_USUARIO.github.io/kambam/` a cada push na `main`.
+
+**Pré-requisito:** em Settings → Pages, selecionar a fonte **"GitHub Actions"** (Deploy from a branch não funciona com este app).
+
 ## Estrutura
 
 - `src/` — código-fonte (React + TypeScript + Tailwind)
