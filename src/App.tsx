@@ -42,9 +42,8 @@ export default function App() {
     return getSampleCards();
   });
 
-  // Team Members State (with Firebase: starts empty; else localStorage / defaults)
+  // Team Members State (local cache first, then replaced by Firestore if present)
   const [teamMembers, setTeamMembers] = useState<Assignee[]>(() => {
-    if (isFirebaseConfigured) return [];
     try {
       const saved = localStorage.getItem(TEAM_STORAGE_KEY);
       if (saved) {
@@ -59,9 +58,8 @@ export default function App() {
     return TEAM_MEMBERS;
   });
 
-  // Checklist Templates State (with Firebase: starts empty; else localStorage / defaults)
+  // Checklist Templates State (local cache first, then replaced by Firestore if present)
   const [checklistTemplates, setChecklistTemplates] = useState<ChecklistTemplate[]>(() => {
-    if (isFirebaseConfigured) return [];
     try {
       const saved = localStorage.getItem(TEMPLATE_STORAGE_KEY);
       if (saved) {
@@ -76,20 +74,18 @@ export default function App() {
     return DEFAULT_CHECKLIST_TEMPLATES;
   });
 
-  // Content Formats State (defaults; replaced by Firestore if present)
+  // Content Formats State (local cache first, then replaced by Firestore if present)
   const [formats, setFormats] = useState<ContentFormatItem[]>(() => {
-    if (!isFirebaseConfigured) {
-      try {
-        const saved = localStorage.getItem(FORMAT_STORAGE_KEY);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            return parsed;
-          }
+    try {
+      const saved = localStorage.getItem(FORMAT_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
         }
-      } catch (e) {
-        console.warn('Could not read content formats from localStorage');
       }
+    } catch (e) {
+      console.warn('Could not read content formats from localStorage');
     }
     return DEFAULT_FORMATS;
   });
