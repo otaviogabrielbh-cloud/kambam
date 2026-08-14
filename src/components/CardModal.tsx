@@ -1,0 +1,634 @@
+import React, { useState, useEffect } from 'react';
+import {
+  ContentCard,
+  ContentFormat,
+  Priority,
+  StageId,
+  ChecklistItem,
+  Assignee,
+  ChecklistTemplate,
+  ContentFormatItem,
+  POPULAR_TAGS,
+  STAGES,
+  PRIORITY_CONFIG,
+} from '../types';
+import { getPreviousStage, getNextStage, getChecklistProgress, formatDateBR } from '../utils';
+import {
+  X,
+  Plus,
+  Trash2,
+  Copy,
+  ChevronLeft,
+  ChevronRight,
+  CheckSquare,
+  Square,
+  Calendar,
+  User,
+  Tag,
+  FileText,
+  AlertTriangle,
+  Sparkles,
+} from 'lucide-react';
+
+interface CardModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  card: ContentCard | null; // null means creating new
+  initialStage?: StageId;
+  initialDate?: string;
+  teamMembers: Assignee[];
+  checklistTemplates: ChecklistTemplate[];
+  formats: ContentFormatItem[];
+  onSave: (savedCard: ContentCard) => void;
+  onDuplicate: (card: ContentCard) => void;
+  onDelete: (cardId: string) => void;
+}
+
+export const CardModal: React.FC<CardModalProps> = ({
+  isOpen,
+  onClose,
+  card,
+  initialStage = 'ideas',
+  initialDate,
+  teamMembers,
+  checklistTemplates,
+  formats,
+  onSave,
+  onDuplicate,
+  onDelete,
+}) => {
+  if (!isOpen) return null;
+
+  const isEditing = !!card;
+
+  // Form State
+  const [title, setTitle] = useState('');
+  const [format, setFormat] = useState<ContentFormat>('');
+  const [scheduledDate, setScheduledDate] = useState('');
+  const [assigneeId, setAssigneeId] = useState(teamMembers[0]?.id ?? '');
+  const [priority, setPriority] = useState<Priority>('Média');
+  const [stage, setStage] = useState<StageId>(initialStage);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
+  const [newChecklistText, setNewChecklistText] = useState('');
+  const [notes, setNotes] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  useEffect(() => {
+    if (card) {
+      setTitle(card.title);
+      setFormat(card.format);
+      setScheduledDate(card.scheduledDate || '');
+      setAssigneeId(card.assignee.id);
+      setPriority(card.priority);
+      setStage(card.stage);
+      setTags([...card.tags]);
+      setChecklist(card.checklist ? [...card.checklist] : []);
+      setNotes(card.notes || '');
+    } else {
+      // Default for new card
+      const today = new Date();
+      const defaultDateStr =
+        initialDate ||
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(
+          today.getDate()
+        ).padStart(2, '0')}`;
+
+      setTitle('');
+      setFormat(formats[0]?.name ?? '');
+      setScheduledDate(defaultDateStr);
+      setAssigneeId(teamMembers[0]?.id ?? '');
+      setPriority('Média');
+      setStage(initialStage);
+      setTags(['IA', 'Tutorial']);
+      setChecklist(
+        checklistTemplates[0]
+          ? checklistTemplates[0].items.map((text, idx) => ({
+              id: `cl-${Date.now()}-${idx}`,
+              text,
+              completed: false,
+            }))
+          : [
+              { id: `cl-${Date.now()}-1`, text: 'Estruturação do Roteiro / Ideia', completed: false },
+              { id: `cl-${Date.now()}-2`, text: 'Produção e Gravação / Design', completed: false },
+              { id: `cl-${Date.now()}-3`, text: 'Revisão e Agendamento', completed: false },
+            ]
+      );
+      setNotes('');
+    }
+    setShowDeleteConfirm(false);
+  }, [card, initialStage, initialDate, isOpen, formats]);
+
+  // Checklist handlers
+  const handleToggleChecklist = (id: string) => {
+    setChecklist((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item))
+    );
+  };
+
+  const handleAddChecklistItem = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!newChecklistText.trim()) return;
+    setChecklist((prev) => [
+      ...prev,
+      { id: `cl-${Date.now()}`, text: newChecklistText.trim(), completed: false },
+    ]);
+    setNewChecklistText('');
+  };
+
+  const handleDeleteChecklistItem = (id: string) => {
+    setChecklist((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // Tag handlers
+  const handleAddTag = (tagToAdd: string) => {
+    const trimmed = tagToAdd.trim().replace(/^#/, '');
+    if (!trimmed || tags.includes(trimmed)) return;
+    setTags((prev) => [...prev, trimmed]);
+    setTagInput('');
+  };
+
+  const handleRemoveTag = (tagToRemove: string) => {
+    setTags((prev) => prev.filter((t) => t !== tagToRemove));
+  };
+
+  // Stage advance / back inside modal
+  const prevStage = getPreviousStage(stage);
+  const nextStage = getNextStage(stage);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title.trim()) return;
+
+    const selectedAssignee =
+      teamMembers.find((m) => m.id === assigneeId) ||
+      teamMembers[0] ||
+      ({ id: 'member-unknown', name: 'Sem responsável', initials: '?', color: 'bg-slate-600 text-slate-50' } as Assignee);
+
+    const updatedCard: ContentCard = {
+      id: card ? card.id : `card-${Date.now()}`,
+      title: title.trim(),
+      format: format || formats[0]?.name || '',
+      scheduledDate,
+      assignee: selectedAssignee,
+      priority,
+      tags,
+      checklist,
+      notes: notes.trim(),
+      stage,
+      createdAt: card ? card.createdAt : new Date().toISOString().split('T')[0],
+      updatedAt: new Date().toISOString(),
+    };
+
+    onSave(updatedCard);
+    onClose();
+  };
+
+  const checklistProgress = getChecklistProgress(checklist);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md overflow-y-auto"
+      onClick={onClose}
+    >
+      <div
+        id="card-editor-modal"
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-2xl bg-[#070e20] border border-cyan-900/50 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
+      >
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-cyan-950/80 bg-[#050b18]/80">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold text-white font-display">
+                {isEditing ? 'Editar Conteúdo' : 'Novo Conteúdo'}
+              </h2>
+              <p className="text-xs text-slate-400">
+                {isEditing ? 'Atualize as informações do card' : 'Preencha os detalhes para o pipeline'}
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1c38] transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Modal Body Form */}
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+          {/* Quick Stage Bar inside Modal */}
+          <div className="bg-[#050b18] p-3 rounded-xl border border-cyan-950/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400">Etapa Atual:</span>
+              <div className="flex items-center gap-1">
+                {STAGES.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStage(s.id)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
+                      stage === s.id
+                        ? `${s.bgGlow} text-white font-bold border-cyan-400 shadow-sm`
+                        : 'border-transparent text-slate-400 hover:bg-[#0c1834] hover:text-slate-200'
+                    }`}
+                  >
+                    {s.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Step Buttons in Modal */}
+            <div className="flex items-center gap-1.5 self-end sm:self-auto">
+              <button
+                type="button"
+                id="modal-btn-prev-stage"
+                disabled={!prevStage}
+                onClick={() => prevStage && setStage(prevStage)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                  prevStage
+                    ? 'bg-[#0a1428] text-slate-200 border-cyan-950 hover:bg-[#0e1c38] hover:text-cyan-300 cursor-pointer'
+                    : 'bg-[#040814]/50 text-slate-700 border-cyan-950/40 cursor-not-allowed'
+                }`}
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                <span>Voltar</span>
+              </button>
+              <button
+                type="button"
+                id="modal-btn-next-stage"
+                disabled={!nextStage}
+                onClick={() => nextStage && setStage(nextStage)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
+                  nextStage
+                    ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 hover:bg-cyan-400 cursor-pointer shadow-sm shadow-cyan-500/30'
+                    : 'bg-[#040814]/50 text-slate-700 border-cyan-950/40 cursor-not-allowed'
+                }`}
+              >
+                <span>Avançar</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Title Input */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              Título do Conteúdo <span className="text-cyan-400">*</span>
+            </label>
+            <input
+              id="card-modal-title-input"
+              type="text"
+              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ex: Como Criar Agentes de IA com Gemini e n8n..."
+              className="w-full bg-[#050c1c] text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 border border-cyan-950/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
+            />
+          </div>
+
+          {/* 3 Columns: Format, Date, Priority */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            {/* Format */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                Formato
+              </label>
+              <select
+                id="card-modal-format-select"
+                value={format}
+                onChange={(e) => setFormat(e.target.value)}
+                className="w-full bg-[#050c1c] text-slate-200 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs transition-all cursor-pointer"
+              >
+                {formats.length === 0 && (
+                  <option value="" className="bg-[#050c1c] text-slate-400">
+                    Nenhum formato cadastrado
+                  </option>
+                )}
+                {formats.map((f) => (
+                  <option key={f.id} value={f.name} className="bg-[#050c1c] text-slate-200">
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Date */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                Data Prevista
+              </label>
+              <input
+                id="card-modal-date-input"
+                type="date"
+                required
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="w-full bg-[#050c1c] text-slate-200 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs transition-all font-mono"
+              />
+            </div>
+
+            {/* Priority */}
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+                Prioridade
+              </label>
+              <select
+                id="card-modal-priority-select"
+                value={priority}
+                onChange={(e) => setPriority(e.target.value as Priority)}
+                className="w-full bg-[#050c1c] text-slate-200 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs transition-all cursor-pointer"
+              >
+                <option value="Alta">Alta</option>
+                <option value="Média">Média</option>
+                <option value="Baixa">Baixa</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Assignee Selection */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              Responsável
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {teamMembers.length === 0 && (
+                <p className="col-span-full text-xs text-slate-500">
+                  Nenhum responsável cadastrado. Adicione um em Configurações.
+                </p>
+              )}
+              {teamMembers.map((member) => {
+                const isSelected = member.id === assigneeId;
+                return (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => setAssigneeId(member.id)}
+                    className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-cyan-950/50 border-cyan-400 text-white shadow-sm ring-1 ring-cyan-400/50'
+                        : 'bg-[#050c1c] border-cyan-950/80 text-slate-400 hover:border-cyan-800/60'
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${member.color}`}
+                    >
+                      {member.initials}
+                    </div>
+                    <span className="text-xs font-medium truncate">{member.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Tags Manager */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              Tags / Categorias
+            </label>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-[#09142c] text-cyan-300 border border-cyan-900/60"
+                >
+                  <span>#{tag}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveTag(tag)}
+                    className="hover:text-red-400 cursor-pointer"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            {/* Tag Input & Popular Suggestions */}
+            <div className="flex items-center gap-2 mb-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddTag(tagInput);
+                  }
+                }}
+                placeholder="Digitar nova tag e pressionar Enter..."
+                className="flex-1 bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-xl px-3 py-1.5 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs"
+              />
+              <button
+                type="button"
+                onClick={() => handleAddTag(tagInput)}
+                className="px-3 py-1.5 rounded-xl bg-[#0a1630] hover:bg-[#0e1f44] text-slate-200 text-xs font-medium border border-cyan-950/80 cursor-pointer"
+              >
+                Adicionar
+              </button>
+            </div>
+
+            <div className="flex items-center gap-1 flex-wrap">
+              <span className="text-[11px] text-slate-500">Sugeridas:</span>
+              {POPULAR_TAGS.slice(0, 6).map((pop) => (
+                <button
+                  key={pop}
+                  type="button"
+                  onClick={() => handleAddTag(pop)}
+                  disabled={tags.includes(pop)}
+                  className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+                    tags.includes(pop)
+                      ? 'opacity-30 border-transparent text-slate-600 cursor-not-allowed'
+                      : 'border-cyan-950/80 text-slate-400 hover:text-cyan-300 hover:border-cyan-800/60'
+                  }`}
+                >
+                  +{pop}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Checklist Manager */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                Checklist de Tarefas
+              </label>
+              <span className="text-xs font-mono text-cyan-400 font-semibold">
+                {checklistProgress.completed}/{checklistProgress.total} ({checklistProgress.percentage}%)
+              </span>
+            </div>
+
+            {/* Checklist Progress Bar */}
+            <div className="w-full bg-[#050b18] rounded-full h-1.5 mb-3 overflow-hidden border border-cyan-950/60">
+              <div
+                className="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-cyan-500/40"
+                style={{ width: `${checklistProgress.percentage}%` }}
+              ></div>
+            </div>
+
+            {/* Checklist Items */}
+            <div className="space-y-1.5 mb-2.5">
+              {checklist.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center justify-between p-2 rounded-xl bg-[#050c1c] border border-cyan-950/70 hover:border-cyan-900/60 transition-colors group"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleToggleChecklist(item.id)}
+                    className="flex items-center gap-2.5 text-left flex-1 cursor-pointer"
+                  >
+                    {item.completed ? (
+                      <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />
+                    ) : (
+                      <Square className="w-4 h-4 text-slate-500 shrink-0" />
+                    )}
+                    <span
+                      className={`text-xs ${
+                        item.completed ? 'line-through text-slate-500' : 'text-slate-200'
+                      }`}
+                    >
+                      {item.text}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteChecklistItem(item.id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-opacity cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {/* Add Checklist Item */}
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newChecklistText}
+                onChange={(e) => setNewChecklistText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddChecklistItem();
+                  }
+                }}
+                placeholder="Adicionar nova tarefa..."
+                className="flex-1 bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs"
+              />
+              <button
+                type="button"
+                onClick={handleAddChecklistItem}
+                className="px-3 py-2 rounded-xl bg-[#0a1630] hover:bg-[#0e1f44] text-slate-200 text-xs font-semibold border border-cyan-950/80 flex items-center gap-1 cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Adicionar</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Notes / Anotações */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              Anotações / Briefing / Roteiro
+            </label>
+            <textarea
+              id="card-modal-notes-input"
+              rows={3}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Ideias centrais, referências, links, observações de gravação..."
+              className="w-full bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-xl p-3 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs resize-y"
+            ></textarea>
+          </div>
+
+          {/* Delete Confirmation Alert */}
+          {showDeleteConfirm && (
+            <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-red-300 text-xs">
+                <AlertTriangle className="w-4 h-4 text-red-400 shrink-0" />
+                <span>Tem certeza que deseja excluir este conteúdo?</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (card) onDelete(card.id);
+                    onClose();
+                  }}
+                  className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs cursor-pointer"
+                >
+                  Sim, Excluir
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Modal Footer Controls */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-cyan-950/80">
+            <div className="flex items-center gap-2">
+              {isEditing && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (card) onDuplicate(card);
+                      onClose();
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#09142c] hover:bg-[#0d1e42] text-slate-300 text-xs font-medium border border-cyan-950/80 transition-colors cursor-pointer"
+                  >
+                    <Copy className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Duplicar</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/30 hover:bg-red-950/40 text-red-400 text-xs font-medium border border-red-900/40 transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Excluir</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-xl bg-[#09142c] hover:bg-[#0e1c38] text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                id="btn-save-card-modal"
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-400 via-cyan-500 to-blue-600 hover:from-cyan-300 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/25 transition-all cursor-pointer"
+              >
+                {isEditing ? 'Salvar Alterações' : 'Criar Conteúdo'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
