@@ -7,7 +7,6 @@ import { FilterBar, FilterState } from './components/FilterBar';
 import { KanbanBoard } from './components/KanbanBoard';
 import { CalendarView } from './components/CalendarView';
 import { CardModal } from './components/CardModal';
-import { JsonExportModal } from './components/JsonExportModal';
 import { SettingsModal } from './components/SettingsModal';
 import { isOverdue } from './utils';
 import { ToastMessage } from './components/ToastMessage';
@@ -230,7 +229,6 @@ export default function App() {
   const [selectedCard, setSelectedCard] = useState<ContentCard | null>(null);
   const [modalInitialStage, setModalInitialStage] = useState<StageId>('ideas');
   const [modalInitialDate, setModalInitialDate] = useState<string | undefined>(undefined);
-  const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
 
   // Toast Notification state
@@ -405,11 +403,6 @@ export default function App() {
     showToast('Filtros resetados.');
   };
 
-  const handleImportCards = (importedCards: ContentCard[]) => {
-    setCards(importedCards);
-    showToast(`${importedCards.length} conteúdos importados!`, 'success');
-  };
-
   return (
     <div className="min-h-screen bg-page text-ink flex flex-col selection:bg-cyan-400 selection:text-slate-950">
       {/* Loading state while Firestore hydrates */}
@@ -431,7 +424,6 @@ export default function App() {
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onNewCard={() => handleOpenNewCard('ideas')}
-        onOpenJsonModal={() => setIsJsonModalOpen(true)}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
       />
 
@@ -494,14 +486,6 @@ export default function App() {
         onSave={handleSaveCard}
         onDuplicate={handleDuplicateCard}
         onDelete={handleDeleteCard}
-      />
-
-      {/* JSON Export / Import Modal for n8n & API workflows */}
-      <JsonExportModal
-        isOpen={isJsonModalOpen}
-        onClose={() => setIsJsonModalOpen(false)}
-        cards={cards}
-        onImportCards={handleImportCards}
       />
 
       {/* Settings Modal: Responsáveis, Checklists & Formatos */}

@@ -1,11 +1,10 @@
 import React from 'react';
-import { Kanban, Calendar as CalendarIcon, Plus, Sparkles, Code2, Settings } from 'lucide-react';
+import { Kanban, Calendar as CalendarIcon, Plus, Sparkles, Settings } from 'lucide-react';
 
 interface HeaderProps {
   viewMode: 'kanban' | 'calendar';
   onViewModeChange: (mode: 'kanban' | 'calendar') => void;
   onNewCard: () => void;
-  onOpenJsonModal: () => void;
   onOpenSettings: () => void;
 }
 
@@ -13,7 +12,6 @@ export const Header: React.FC<HeaderProps> = ({
   viewMode,
   onViewModeChange,
   onNewCard,
-  onOpenJsonModal,
   onOpenSettings,
 }) => {
   return (
@@ -68,18 +66,8 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
 
-          {/* JSON & Utility Buttons */}
+          {/* Utility Buttons */}
           <div className="flex items-center gap-1.5">
-            <button
-              id="btn-json-automation"
-              onClick={onOpenJsonModal}
-              title="Exportar/Importar JSON (n8n / Automações)"
-              className="p-2 rounded-xl bg-card text-ink-2 hover:text-accent hover:bg-raise border border-line hover:border-cyan-800/50 transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm"
-            >
-              <Code2 className="w-4 h-4 text-cyan-400" />
-              <span className="hidden xl:inline">Dados / n8n</span>
-            </button>
-
             <button
               id="btn-settings"
               onClick={onOpenSettings}

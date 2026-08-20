@@ -80,8 +80,6 @@ export const CardModal: React.FC<CardModalProps> = ({
   onDuplicate,
   onDelete,
 }) => {
-  if (!isOpen) return null;
-
   const isEditing = !!card;
 
   // Form State
@@ -342,6 +340,8 @@ export const CardModal: React.FC<CardModalProps> = ({
   };
 
   const checklistProgress = getChecklistProgress(checklist);
+
+  if (!isOpen) return null;
 
   return (
     <div

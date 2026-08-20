@@ -80,6 +80,24 @@ export const COLLECTIONS = {
 
 type DocData = { id: string } & Record<string, unknown>;
 
+/**
+ * Firestore rejects `undefined` values in documents (throws
+ * "Unsupported field value: undefined"). Recursively strips `undefined`
+ * keys/items so the sync never fails because of optional fields.
+ */
+function sanitizeForFirestore(value: unknown): unknown {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) return value.map(sanitizeForFirestore);
+  if (typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) out[k] = sanitizeForFirestore(v);
+    }
+    return out;
+  }
+  return value;
+}
+
 export const firestoreService = {
   /**
    * Fetch all documents from a collection. Returns [] if nothing stored.
@@ -101,7 +119,9 @@ export const firestoreService = {
   async set(collectionName: string, id: string, data: object): Promise<void> {
     const database = getDb();
     if (!database) return;
-    await setDoc(doc(database, collectionName, id), data, { merge: true });
+    await setDoc(doc(database, collectionName, id), sanitizeForFirestore(data) as object, {
+      merge: true,
+    });
   },
 
   async remove(collectionName: string, id: string): Promise<void> {
