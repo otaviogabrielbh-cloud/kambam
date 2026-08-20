@@ -64,39 +64,39 @@ export const JsonExportModal: React.FC<JsonExportModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-2xl bg-[#070e20] border border-cyan-900/50 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
+        className="w-full max-w-2xl bg-panel border border-line rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-cyan-950/80 bg-[#050b18]/80">
+        <div className="flex items-center justify-between p-4 border-b border-line bg-well/80">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Code className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white font-display">
+              <h2 className="text-base font-bold text-ink font-display">
                 Estrutura de Dados & Automação (n8n / API)
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-3">
                 JSON padronizado para sincronização e webhooks
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1c38] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-ink-3 hover:text-ink hover:bg-raise transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab switch */}
-        <div className="flex items-center border-b border-cyan-950/80 px-4 bg-[#050b18]/50">
+        <div className="flex items-center border-b border-line px-4 bg-well/50">
           <button
             onClick={() => setMode('export')}
             className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               mode === 'export'
-                ? 'border-cyan-400 text-cyan-300 font-bold'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-cyan-400 text-accent font-bold'
+                : 'border-transparent text-ink-3 hover:text-ink-2'
             }`}
           >
             Exportar JSON ({cards.length} cards)
@@ -105,8 +105,8 @@ export const JsonExportModal: React.FC<JsonExportModalProps> = ({
             onClick={() => setMode('import')}
             className={`py-2.5 px-4 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
               mode === 'import'
-                ? 'border-cyan-400 text-cyan-300 font-bold'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'border-cyan-400 text-accent font-bold'
+                : 'border-transparent text-ink-3 hover:text-ink-2'
             }`}
           >
             Importar JSON
@@ -117,19 +117,19 @@ export const JsonExportModal: React.FC<JsonExportModalProps> = ({
           {mode === 'export' ? (
             <div>
               <div className="relative mb-4">
-                <pre className="p-3.5 bg-[#040814] border border-cyan-950/80 rounded-xl text-cyan-300 font-mono text-xs max-h-72 overflow-y-auto selection:bg-cyan-900 selection:text-white">
+                <pre className="p-3.5 bg-well border border-line rounded-xl text-accent font-mono text-xs max-h-72 overflow-y-auto selection:bg-cyan-900 selection:text-white">
                   {jsonString}
                 </pre>
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-ink-3">
                   Compatível com nós de Webhook e Agentes n8n.
                 </p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopy}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#09142c] hover:bg-[#0d1e42] text-slate-200 text-xs font-semibold border border-cyan-950/80 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-card hover:bg-raise text-ink-2 text-xs font-semibold border border-line transition-colors cursor-pointer"
                   >
                     {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copied ? 'Copiado!' : 'Copiar JSON'}</span>
@@ -146,7 +146,7 @@ export const JsonExportModal: React.FC<JsonExportModalProps> = ({
             </div>
           ) : (
             <form onSubmit={handleImportSubmit}>
-              <p className="text-xs text-slate-300 mb-2">
+              <p className="text-xs text-ink-2 mb-2">
                 Cole o JSON de cards abaixo para substituir ou restaurar o pipeline:
               </p>
               <textarea
@@ -154,7 +154,7 @@ export const JsonExportModal: React.FC<JsonExportModalProps> = ({
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
                 placeholder="[ { id: 'card-1', title: '...', format: '...' } ]"
-                className="w-full bg-[#040814] border border-cyan-950/80 rounded-xl p-3 text-xs font-mono text-cyan-300 placeholder-slate-600 outline-none focus:border-cyan-400 mb-3"
+                className="w-full bg-well border border-line rounded-xl p-3 text-xs font-mono text-accent placeholder-ink-4 outline-none focus:border-cyan-400 mb-3"
               ></textarea>
 
               {importError && (
@@ -168,7 +168,7 @@ export const JsonExportModal: React.FC<JsonExportModalProps> = ({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-[#09142c] hover:bg-[#0e1c38] text-slate-300 text-xs font-medium cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-card hover:bg-raise text-ink-2 text-xs font-medium cursor-pointer"
                 >
                   Cancelar
                 </button>

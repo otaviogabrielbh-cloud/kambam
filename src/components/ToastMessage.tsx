@@ -26,7 +26,7 @@ export const ToastMessage: React.FC<ToastMessageProps> = ({
         };
       default:
         return {
-          bg: 'bg-cyan-950/90 border-cyan-500/50 text-cyan-200',
+          bg: 'bg-cyan-950/90 border-cyan-500/50 text-accent',
           icon: <Info className="w-4 h-4 text-cyan-400 shrink-0" />,
         };
     }
@@ -43,7 +43,7 @@ export const ToastMessage: React.FC<ToastMessageProps> = ({
         <span className="flex-1">{message}</span>
         <button
           onClick={onClose}
-          className="text-slate-400 hover:text-white transition-colors ml-1"
+          className="text-ink-3 hover:text-ink transition-colors ml-1"
         >
           <X className="w-3.5 h-3.5" />
         </button>

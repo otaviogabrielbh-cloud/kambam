@@ -86,22 +86,22 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               onDragOver={(e) => handleDragOver(e, stage.id)}
               onDragLeave={(e) => handleDragLeave(e, stage.id)}
               onDrop={(e) => handleDrop(e, stage.id)}
-              className={`flex flex-col bg-[#070e20]/95 backdrop-blur-md rounded-2xl border transition-all duration-200 min-h-[580px] shadow-2xl ${
+              className={`flex flex-col bg-panel/95 backdrop-blur-md rounded-2xl border transition-all duration-200 min-h-[580px] shadow-2xl ${
                 isOver
-                  ? 'border-cyan-400 ring-2 ring-cyan-400/50 bg-[#0a1733] scale-[1.01] shadow-cyan-500/20'
-                  : 'border-cyan-950/70 hover:border-cyan-900/60'
+                  ? 'border-cyan-400 ring-2 ring-cyan-400/50 bg-card scale-[1.01] shadow-cyan-500/20'
+                  : 'border-line hover:border-line'
               }`}
             >
               {/* Column Header */}
-              <div className="p-3.5 border-b border-cyan-950/80 bg-[#050b18]/60 rounded-t-2xl flex items-center justify-between">
+              <div className="p-3.5 border-b border-line bg-well/60 rounded-t-2xl flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-[#0c1834] border border-cyan-900/40">
+                  <div className="p-1.5 rounded-lg bg-raise border border-line">
                     {renderStageIcon(stage.id)}
                   </div>
                   <div>
-                    <h2 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                    <h2 className="text-sm font-bold text-ink flex items-center gap-2">
                       <span>{stage.title}</span>
-                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-[#0c1834] text-cyan-300 border border-cyan-900/50 shadow-inner">
+                      <span className="text-xs font-mono px-2 py-0.5 rounded-full bg-raise text-accent border border-line shadow-inner">
                         {stageCards.length}
                       </span>
                     </h2>
@@ -113,7 +113,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   id={`btn-add-card-${stage.id}`}
                   onClick={() => onNewCardInStage(stage.id)}
                   title={`Adicionar novo conteúdo em ${stage.title}`}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-[#0e1c3a] border border-transparent hover:border-cyan-800/40 transition-colors cursor-pointer"
+                  className="p-1.5 rounded-lg text-ink-3 hover:text-accent hover:bg-raise border border-transparent hover:border-cyan-800/40 transition-colors cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
@@ -122,11 +122,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               {/* Cards Container */}
               <div className="p-3 flex-1 flex flex-col gap-3 min-h-[300px]">
                 {stageCards.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-cyan-950/60 rounded-xl bg-[#050c1c]/40">
-                    <p className="text-xs text-slate-500 mb-3">Nenhum conteúdo nesta etapa</p>
+                  <div className="flex-1 flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-line rounded-xl bg-well/40">
+                    <p className="text-xs text-ink-4 mb-3">Nenhum conteúdo nesta etapa</p>
                     <button
                       onClick={() => onNewCardInStage(stage.id)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-cyan-300 bg-cyan-950/50 border border-cyan-800/60 hover:bg-cyan-900/50 hover:border-cyan-500/60 transition-all cursor-pointer shadow-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-accent bg-cyan-950/50 border border-cyan-800/60 hover:bg-cyan-900/50 hover:border-cyan-500/60 transition-all cursor-pointer shadow-sm"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Adicionar</span>
@@ -152,7 +152,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               <div className="p-2.5 pt-0">
                 <button
                   onClick={() => onNewCardInStage(stage.id)}
-                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-cyan-200 bg-[#091224]/80 hover:bg-[#0e1b38] border border-cyan-950/70 hover:border-cyan-800/50 transition-all cursor-pointer shadow-sm"
+                  className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold text-ink-3 hover:text-accent bg-card/80 hover:bg-raise border border-line hover:border-cyan-800/50 transition-all cursor-pointer shadow-sm"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Novo conteúdo</span>

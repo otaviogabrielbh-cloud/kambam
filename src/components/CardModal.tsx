@@ -51,6 +51,7 @@ import {
   FileDown,
 } from 'lucide-react';
 import { generateCardPDF } from '../pdfGenerator';
+import { storageService, isFirebaseConfigured } from '../firebase';
 
 interface CardModalProps {
   isOpen: boolean;
@@ -193,45 +194,51 @@ export const CardModal: React.FC<CardModalProps> = ({
   };
 
   // Attachment handlers
-  const handleFileUpload = (fileList: FileList | null) => {
+  const handleFileUpload = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) return;
     setIsUploading(true);
 
     const filesArray = Array.from(fileList);
-    const readPromises = filesArray.map((file) => {
-      return new Promise<CardAttachment>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          resolve({
+
+    try {
+      const newAttachments = await Promise.all(
+        filesArray.map(async (file): Promise<CardAttachment> => {
+          const base = {
             id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
             name: file.name,
             size: file.size,
             type: file.type || 'application/octet-stream',
-            url: reader.result as string,
             uploadedAt: new Date().toISOString(),
             notes: fileNote.trim() || undefined,
             isLink: false,
-          });
-        };
-        reader.onerror = (err) => reject(err);
-        reader.readAsDataURL(file);
-      });
-    });
+          };
 
-    Promise.all(readPromises)
-      .then((newAttachments) => {
-        setAttachments((prev) => [...prev, ...newAttachments]);
-        setFileNote('');
-        if (fileInputRef.current) {
-          fileInputRef.current.value = '';
-        }
-      })
-      .catch((err) => {
-        console.error('Erro ao carregar arquivo:', err);
-      })
-      .finally(() => {
-        setIsUploading(false);
-      });
+          if (isFirebaseConfigured) {
+            // Modo nuvem: arquivo vai para o Firebase Storage
+            const { url, storagePath } = await storageService.uploadFile(file);
+            return { ...base, url, storagePath };
+          }
+
+          // Modo local (sem Firebase): base64 embutido no card
+          return await new Promise<CardAttachment>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve({ ...base, url: reader.result as string });
+            reader.onerror = (err) => reject(err);
+            reader.readAsDataURL(file);
+          });
+        })
+      );
+
+      setAttachments((prev) => [...prev, ...newAttachments]);
+      setFileNote('');
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err) {
+      console.error('Erro ao carregar arquivo:', err);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleAddLink = (e?: React.FormEvent) => {
@@ -265,6 +272,10 @@ export const CardModal: React.FC<CardModalProps> = ({
   };
 
   const handleDeleteAttachment = (id: string) => {
+    const att = attachments.find((a) => a.id === id);
+    if (att?.storagePath) {
+      storageService.deleteFile(att.storagePath);
+    }
     setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
@@ -340,19 +351,19 @@ export const CardModal: React.FC<CardModalProps> = ({
       <div
         id="card-editor-modal"
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl bg-[#070e20] border border-cyan-900/50 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
+        className="relative w-full max-w-2xl bg-panel border border-line rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-cyan-950/80 bg-[#050b18]/80">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-line bg-well/80">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white font-display">
+              <h2 className="text-base sm:text-lg font-bold text-ink font-display">
                 {isEditing ? 'Editar Conteúdo' : 'Novo Conteúdo'}
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-3">
                 {isEditing ? 'Atualize as informações do card' : 'Preencha os detalhes para o pipeline'}
               </p>
             </div>
@@ -360,7 +371,7 @@ export const CardModal: React.FC<CardModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1c38] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-ink-3 hover:text-ink hover:bg-raise transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -369,9 +380,9 @@ export const CardModal: React.FC<CardModalProps> = ({
         {/* Modal Body Form */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* Quick Stage Bar inside Modal */}
-          <div className="bg-[#050b18] p-3 rounded-xl border border-cyan-950/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="bg-well p-3 rounded-xl border border-line flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-slate-400">Etapa Atual:</span>
+              <span className="text-xs font-semibold text-ink-3">Etapa Atual:</span>
               <div className="flex items-center gap-1">
                 {STAGES.map((s) => (
                   <button
@@ -381,7 +392,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                     className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-all cursor-pointer ${
                       stage === s.id
                         ? `${s.bgGlow} text-white font-bold border-cyan-400 shadow-sm`
-                        : 'border-transparent text-slate-400 hover:bg-[#0c1834] hover:text-slate-200'
+                        : 'border-transparent text-ink-3 hover:bg-raise hover:text-ink-2'
                     }`}
                   >
                     {s.title}
@@ -399,8 +410,8 @@ export const CardModal: React.FC<CardModalProps> = ({
                 onClick={() => prevStage && setStage(prevStage)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
                   prevStage
-                    ? 'bg-[#0a1428] text-slate-200 border-cyan-950 hover:bg-[#0e1c38] hover:text-cyan-300 cursor-pointer'
-                    : 'bg-[#040814]/50 text-slate-700 border-cyan-950/40 cursor-not-allowed'
+                    ? 'bg-card text-ink-2 border-line hover:bg-raise hover:text-accent cursor-pointer'
+                    : 'bg-well/50 text-ink-4 border-line cursor-not-allowed'
                 }`}
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
@@ -414,7 +425,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border transition-all ${
                   nextStage
                     ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400 hover:bg-cyan-400 cursor-pointer shadow-sm shadow-cyan-500/30'
-                    : 'bg-[#040814]/50 text-slate-700 border-cyan-950/40 cursor-not-allowed'
+                    : 'bg-well/50 text-ink-4 border-line cursor-not-allowed'
                 }`}
               >
                 <span>Avançar</span>
@@ -425,7 +436,7 @@ export const CardModal: React.FC<CardModalProps> = ({
 
           {/* Title Input */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
               Título do Conteúdo <span className="text-cyan-400">*</span>
             </label>
             <input
@@ -435,7 +446,7 @@ export const CardModal: React.FC<CardModalProps> = ({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Como Criar Agentes de IA com Gemini e n8n..."
-              className="w-full bg-[#050c1c] text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 border border-cyan-950/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
+              className="w-full bg-well text-ink placeholder-ink-4 rounded-xl px-3.5 py-2.5 border border-line focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
             />
           </div>
 
@@ -443,22 +454,22 @@ export const CardModal: React.FC<CardModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
             {/* Format */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
                 Formato
               </label>
               <select
                 id="card-modal-format-select"
                 value={format}
                 onChange={(e) => setFormat(e.target.value)}
-                className="w-full bg-[#050c1c] text-slate-200 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs transition-all cursor-pointer"
+                className="w-full bg-well text-ink-2 rounded-xl px-3 py-2 border border-line focus:border-cyan-400 outline-none text-xs transition-all cursor-pointer"
               >
                 {formats.length === 0 && (
-                  <option value="" className="bg-[#050c1c] text-slate-400">
+                  <option value="" className="bg-well text-ink-3">
                     Nenhum formato cadastrado
                   </option>
                 )}
                 {formats.map((f) => (
-                  <option key={f.id} value={f.name} className="bg-[#050c1c] text-slate-200">
+                  <option key={f.id} value={f.name} className="bg-well text-ink-2">
                     {f.name}
                   </option>
                 ))}
@@ -467,7 +478,7 @@ export const CardModal: React.FC<CardModalProps> = ({
 
             {/* Date */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
                 Data Prevista
               </label>
               <input
@@ -476,20 +487,20 @@ export const CardModal: React.FC<CardModalProps> = ({
                 required
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
-                className="w-full bg-[#050c1c] text-slate-200 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs transition-all font-mono"
+                className="w-full bg-well text-ink-2 rounded-xl px-3 py-2 border border-line focus:border-cyan-400 outline-none text-xs transition-all font-mono"
               />
             </div>
 
             {/* Priority */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+              <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
                 Prioridade
               </label>
               <select
                 id="card-modal-priority-select"
                 value={priority}
                 onChange={(e) => setPriority(e.target.value as Priority)}
-                className="w-full bg-[#050c1c] text-slate-200 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs transition-all cursor-pointer"
+                className="w-full bg-well text-ink-2 rounded-xl px-3 py-2 border border-line focus:border-cyan-400 outline-none text-xs transition-all cursor-pointer"
               >
                 <option value="Alta">Alta</option>
                 <option value="Média">Média</option>
@@ -500,12 +511,12 @@ export const CardModal: React.FC<CardModalProps> = ({
 
           {/* Assignee Selection */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
               Responsável
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {teamMembers.length === 0 && (
-                <p className="col-span-full text-xs text-slate-500">
+                <p className="col-span-full text-xs text-ink-4">
                   Nenhum responsável cadastrado. Adicione um em Configurações.
                 </p>
               )}
@@ -519,7 +530,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                     className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all cursor-pointer ${
                       isSelected
                         ? 'bg-cyan-950/50 border-cyan-400 text-white shadow-sm ring-1 ring-cyan-400/50'
-                        : 'bg-[#050c1c] border-cyan-950/80 text-slate-400 hover:border-cyan-800/60'
+                        : 'bg-well border-line text-ink-3 hover:border-cyan-800/60'
                     }`}
                   >
                     <div
@@ -536,14 +547,14 @@ export const CardModal: React.FC<CardModalProps> = ({
 
           {/* Tags Manager */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
               Tags / Categorias
             </label>
             <div className="flex flex-wrap gap-1.5 mb-2">
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-[#09142c] text-cyan-300 border border-cyan-900/60"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs bg-card text-accent border border-line"
                 >
                   <span>#{tag}</span>
                   <button
@@ -570,19 +581,19 @@ export const CardModal: React.FC<CardModalProps> = ({
                   }
                 }}
                 placeholder="Digitar nova tag e pressionar Enter..."
-                className="flex-1 bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-xl px-3 py-1.5 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs"
+                className="flex-1 bg-well text-ink-2 placeholder-ink-4 rounded-xl px-3 py-1.5 border border-line focus:border-cyan-400 outline-none text-xs"
               />
               <button
                 type="button"
                 onClick={() => handleAddTag(tagInput)}
-                className="px-3 py-1.5 rounded-xl bg-[#0a1630] hover:bg-[#0e1f44] text-slate-200 text-xs font-medium border border-cyan-950/80 cursor-pointer"
+                className="px-3 py-1.5 rounded-xl bg-raise hover:bg-raise text-ink-2 text-xs font-medium border border-line cursor-pointer"
               >
                 Adicionar
               </button>
             </div>
 
             <div className="flex items-center gap-1 flex-wrap">
-              <span className="text-[11px] text-slate-500">Sugeridas:</span>
+              <span className="text-[11px] text-ink-4">Sugeridas:</span>
               {POPULAR_TAGS.slice(0, 6).map((pop) => (
                 <button
                   key={pop}
@@ -591,8 +602,8 @@ export const CardModal: React.FC<CardModalProps> = ({
                   disabled={tags.includes(pop)}
                   className={`text-[10px] px-2 py-0.5 rounded border transition-colors cursor-pointer ${
                     tags.includes(pop)
-                      ? 'opacity-30 border-transparent text-slate-600 cursor-not-allowed'
-                      : 'border-cyan-950/80 text-slate-400 hover:text-cyan-300 hover:border-cyan-800/60'
+                      ? 'opacity-30 border-transparent text-ink-4 cursor-not-allowed'
+                      : 'border-line text-ink-3 hover:text-accent hover:border-cyan-800/60'
                   }`}
                 >
                   +{pop}
@@ -604,7 +615,7 @@ export const CardModal: React.FC<CardModalProps> = ({
           {/* Checklist Manager */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-ink-2 uppercase tracking-wider">
                 Checklist de Tarefas
               </label>
               <span className="text-xs font-mono text-cyan-400 font-semibold">
@@ -613,7 +624,7 @@ export const CardModal: React.FC<CardModalProps> = ({
             </div>
 
             {/* Checklist Progress Bar */}
-            <div className="w-full bg-[#050b18] rounded-full h-1.5 mb-3 overflow-hidden border border-cyan-950/60">
+            <div className="w-full bg-well rounded-full h-1.5 mb-3 overflow-hidden border border-line">
               <div
                 className="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full rounded-full transition-all duration-300 shadow-sm shadow-cyan-500/40"
                 style={{ width: `${checklistProgress.percentage}%` }}
@@ -625,7 +636,7 @@ export const CardModal: React.FC<CardModalProps> = ({
               {checklist.map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-center justify-between p-2 rounded-xl bg-[#050c1c] border border-cyan-950/70 hover:border-cyan-900/60 transition-colors group"
+                  className="flex items-center justify-between p-2 rounded-xl bg-well border border-line hover:border-line transition-colors group"
                 >
                   <button
                     type="button"
@@ -635,11 +646,11 @@ export const CardModal: React.FC<CardModalProps> = ({
                     {item.completed ? (
                       <CheckSquare className="w-4 h-4 text-emerald-400 shrink-0" />
                     ) : (
-                      <Square className="w-4 h-4 text-slate-500 shrink-0" />
+                      <Square className="w-4 h-4 text-ink-4 shrink-0" />
                     )}
                     <span
                       className={`text-xs ${
-                        item.completed ? 'line-through text-slate-500' : 'text-slate-200'
+                        item.completed ? 'line-through text-ink-4' : 'text-ink-2'
                       }`}
                     >
                       {item.text}
@@ -648,7 +659,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                   <button
                     type="button"
                     onClick={() => handleDeleteChecklistItem(item.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-slate-500 hover:text-red-400 transition-opacity cursor-pointer"
+                    className="opacity-0 group-hover:opacity-100 p-1 text-ink-4 hover:text-red-400 transition-opacity cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -669,12 +680,12 @@ export const CardModal: React.FC<CardModalProps> = ({
                   }
                 }}
                 placeholder="Adicionar nova tarefa..."
-                className="flex-1 bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-xl px-3 py-2 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs"
+                className="flex-1 bg-well text-ink-2 placeholder-ink-4 rounded-xl px-3 py-2 border border-line focus:border-cyan-400 outline-none text-xs"
               />
               <button
                 type="button"
                 onClick={handleAddChecklistItem}
-                className="px-3 py-2 rounded-xl bg-[#0a1630] hover:bg-[#0e1f44] text-slate-200 text-xs font-semibold border border-cyan-950/80 flex items-center gap-1 cursor-pointer"
+                className="px-3 py-2 rounded-xl bg-raise hover:bg-raise text-ink-2 text-xs font-semibold border border-line flex items-center gap-1 cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Adicionar</span>
@@ -684,7 +695,7 @@ export const CardModal: React.FC<CardModalProps> = ({
 
           {/* Notes / Anotações */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
+            <label className="block text-xs font-semibold text-ink-2 mb-1.5 uppercase tracking-wider">
               Anotações / Briefing / Roteiro
             </label>
             <textarea
@@ -693,16 +704,16 @@ export const CardModal: React.FC<CardModalProps> = ({
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Ideias centrais, referências, links, observações de gravação..."
-              className="w-full bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-xl p-3 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs resize-y"
+              className="w-full bg-well text-ink-2 placeholder-ink-4 rounded-xl p-3 border border-line focus:border-cyan-400 outline-none text-xs resize-y"
             ></textarea>
           </div>
 
           {/* Files & History Attachments Section */}
-          <div className="bg-[#050c1c] p-4 rounded-xl border border-cyan-950/80 space-y-3">
+          <div className="bg-well p-4 rounded-xl border border-line space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Paperclip className="w-4 h-4 text-cyan-400" />
-                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                <label className="text-xs font-semibold text-ink-2 uppercase tracking-wider">
                   Arquivos & Histórico de Anexos
                 </label>
               </div>
@@ -712,14 +723,14 @@ export const CardModal: React.FC<CardModalProps> = ({
             </div>
 
             {/* Sub-tabs: Upload or Link */}
-            <div className="flex items-center gap-1.5 bg-[#030712] p-1 rounded-lg border border-cyan-950/60">
+            <div className="flex items-center gap-1.5 bg-well p-1 rounded-lg border border-line">
               <button
                 type="button"
                 onClick={() => setAttachmentTab('upload')}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
                   attachmentTab === 'upload'
-                    ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-cyan-950/70 text-accent border border-cyan-500/40 shadow-sm'
+                    : 'text-ink-3 hover:text-ink-2'
                 }`}
               >
                 <UploadCloud className="w-3.5 h-3.5" />
@@ -730,8 +741,8 @@ export const CardModal: React.FC<CardModalProps> = ({
                 onClick={() => setAttachmentTab('link')}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
                   attachmentTab === 'link'
-                    ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
+                    ? 'bg-cyan-950/70 text-accent border border-cyan-500/40 shadow-sm'
+                    : 'text-ink-3 hover:text-ink-2'
                 }`}
               >
                 <LinkIcon className="w-3.5 h-3.5" />
@@ -746,7 +757,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 value={fileNote}
                 onChange={(e) => setFileNote(e.target.value)}
                 placeholder="Identificação/versão opcional (ex: 'Roteiro v2', 'Capa aprovada', 'Briefing')..."
-                className="w-full bg-[#030712] text-slate-200 placeholder-slate-600 rounded-lg px-3 py-1.5 border border-cyan-950/60 focus:border-cyan-400 outline-none text-xs"
+                className="w-full bg-well text-ink-2 placeholder-ink-4 rounded-lg px-3 py-1.5 border border-line focus:border-cyan-400 outline-none text-xs"
               />
             </div>
 
@@ -766,7 +777,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 className={`border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer ${
                   isDraggingFile
                     ? 'border-cyan-400 bg-cyan-950/30 scale-[1.01]'
-                    : 'border-cyan-950/80 hover:border-cyan-800/80 bg-[#030712]/60'
+                    : 'border-line hover:border-cyan-800/80 bg-well/60'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
               >
@@ -785,12 +796,12 @@ export const CardModal: React.FC<CardModalProps> = ({
                       <UploadCloud className="w-5 h-5" />
                     )}
                   </div>
-                  <p className="text-xs text-slate-300 font-medium">
+                  <p className="text-xs text-ink-2 font-medium">
                     {isUploading
                       ? 'Processando e anexando arquivos...'
                       : 'Clique ou arraste arquivos aqui para o histórico'}
                   </p>
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[10px] text-ink-4">
                     Suporta imagens, PDFs, roteiros, planilhas, vídeos e áudios
                   </p>
                 </div>
@@ -799,21 +810,21 @@ export const CardModal: React.FC<CardModalProps> = ({
 
             {/* Mode 2: Link Input */}
             {attachmentTab === 'link' && (
-              <div className="space-y-2 bg-[#030712]/60 p-3 rounded-xl border border-cyan-950/60">
+              <div className="space-y-2 bg-well/60 p-3 rounded-xl border border-line">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={linkName}
                     onChange={(e) => setLinkName(e.target.value)}
                     placeholder="Nome do link (ex: Pasta do Google Drive)"
-                    className="bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs"
+                    className="bg-well text-ink-2 placeholder-ink-4 rounded-lg px-3 py-1.5 border border-line focus:border-cyan-400 outline-none text-xs"
                   />
                   <input
                     type="text"
                     value={linkUrl}
                     onChange={(e) => setLinkUrl(e.target.value)}
                     placeholder="URL (ex: drive.google.com/...)"
-                    className="bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs font-mono"
+                    className="bg-well text-ink-2 placeholder-ink-4 rounded-lg px-3 py-1.5 border border-line focus:border-cyan-400 outline-none text-xs font-mono"
                   />
                 </div>
                 <button
@@ -822,8 +833,8 @@ export const CardModal: React.FC<CardModalProps> = ({
                   disabled={!linkUrl.trim()}
                   className={`w-full py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
                     linkUrl.trim()
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/30 cursor-pointer'
-                      : 'bg-slate-900/50 text-slate-600 border border-transparent cursor-not-allowed'
+                      ? 'bg-cyan-500/20 text-accent border border-cyan-500/50 hover:bg-cyan-500/30 cursor-pointer'
+                      : 'bg-well/50 text-ink-4 border border-transparent cursor-not-allowed'
                   }`}
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -835,20 +846,20 @@ export const CardModal: React.FC<CardModalProps> = ({
             {/* List of Attached Files & History */}
             {attachments.length > 0 && (
               <div className="space-y-2 pt-1">
-                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                <span className="text-[11px] font-semibold text-ink-3 uppercase tracking-wider block">
                   Arquivos Registrados no Histórico ({attachments.length}):
                 </span>
                 <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
                   {attachments.map((att) => (
                     <div
                       key={att.id}
-                      className="flex items-center justify-between p-2 rounded-xl bg-[#030712] border border-cyan-950/70 hover:border-cyan-900/70 transition-colors group"
+                      className="flex items-center justify-between p-2 rounded-xl bg-well border border-line hover:border-line transition-colors group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
                         {isImageAttachment(att) ? (
                           <div
                             onClick={() => setPreviewAttachment(att)}
-                            className="w-8 h-8 rounded-lg bg-[#071328] border border-cyan-900/50 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                            className="w-8 h-8 rounded-lg bg-well border border-line overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                             title="Clique para ampliar"
                           >
                             <img
@@ -858,7 +869,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                             />
                           </div>
                         ) : (
-                          <div className="w-8 h-8 rounded-lg bg-[#071328] border border-cyan-900/50 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-lg bg-well border border-line flex items-center justify-center shrink-0">
                             {getAttachmentIcon(att)}
                           </div>
                         )}
@@ -866,7 +877,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
                             <span
-                              className="text-xs font-medium text-slate-200 truncate block group-hover:text-cyan-300 transition-colors"
+                              className="text-xs font-medium text-ink-2 truncate block group-hover:text-accent transition-colors"
                               title={att.name}
                             >
                               {att.name}
@@ -878,7 +889,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                             )}
                           </div>
 
-                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                          <div className="flex items-center gap-2 text-[10px] text-ink-4">
                             {att.size && <span>{formatFileSize(att.size)}</span>}
                             <span>{formatDateTimeBR(att.uploadedAt)}</span>
                             {att.notes && (
@@ -896,7 +907,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                           <button
                             type="button"
                             onClick={() => setPreviewAttachment(att)}
-                            className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#0b1b36] transition-colors cursor-pointer"
+                            className="p-1 rounded text-ink-3 hover:text-accent hover:bg-raise transition-colors cursor-pointer"
                             title="Visualizar imagem"
                           >
                             <Eye className="w-3.5 h-3.5" />
@@ -908,7 +919,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                             href={att.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="p-1 rounded text-slate-400 hover:text-emerald-400 hover:bg-[#0b1b36] transition-colors cursor-pointer inline-flex items-center"
+                            className="p-1 rounded text-ink-3 hover:text-emerald-400 hover:bg-raise transition-colors cursor-pointer inline-flex items-center"
                             title="Abrir link externo"
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
@@ -917,7 +928,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                           <a
                             href={att.url}
                             download={att.name}
-                            className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#0b1b36] transition-colors cursor-pointer inline-flex items-center"
+                            className="p-1 rounded text-ink-3 hover:text-accent hover:bg-raise transition-colors cursor-pointer inline-flex items-center"
                             title="Baixar arquivo"
                           >
                             <Download className="w-3.5 h-3.5" />
@@ -927,7 +938,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                         <button
                           type="button"
                           onClick={() => handleDeleteAttachment(att.id)}
-                          className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-[#1a0c14] transition-colors cursor-pointer"
+                          className="p-1 rounded text-ink-4 hover:text-red-400 hover:bg-raise transition-colors cursor-pointer"
                           title="Remover anexo"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -961,7 +972,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-3 py-1 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-xs cursor-pointer"
+                  className="px-3 py-1 rounded-lg bg-well text-ink-2 hover:bg-well text-xs cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -970,7 +981,7 @@ export const CardModal: React.FC<CardModalProps> = ({
           )}
 
           {/* Modal Footer Controls */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-cyan-950/80">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-4 border-t border-line">
             <div className="flex items-center gap-2">
               {isEditing && (
                 <>
@@ -980,7 +991,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                       if (card) onDuplicate(card);
                       onClose();
                     }}
-                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#09142c] hover:bg-[#0d1e42] text-slate-300 text-xs font-medium border border-cyan-950/80 transition-colors cursor-pointer"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-card hover:bg-raise text-ink-2 text-xs font-medium border border-line transition-colors cursor-pointer"
                   >
                     <Copy className="w-3.5 h-3.5 text-cyan-400" />
                     <span>Duplicar</span>
@@ -1034,7 +1045,7 @@ export const CardModal: React.FC<CardModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-xl bg-[#09142c] hover:bg-[#0e1c38] text-slate-300 text-xs font-medium transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl bg-card hover:bg-raise text-ink-2 text-xs font-medium transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1056,17 +1067,17 @@ export const CardModal: React.FC<CardModalProps> = ({
             onClick={() => setPreviewAttachment(null)}
           >
             <div
-              className="relative max-w-3xl max-h-[85vh] bg-[#070e20] border border-cyan-500/50 rounded-2xl overflow-hidden shadow-2xl flex flex-col p-2"
+              className="relative max-w-3xl max-h-[85vh] bg-panel border border-cyan-500/50 rounded-2xl overflow-hidden shadow-2xl flex flex-col p-2"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between p-2 border-b border-cyan-950 text-slate-200">
+              <div className="flex items-center justify-between p-2 border-b border-line text-ink-2">
                 <span className="text-xs font-semibold truncate mr-4">
                   {previewAttachment.name}
                 </span>
                 <button
                   type="button"
                   onClick={() => setPreviewAttachment(null)}
-                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="p-1 rounded text-ink-3 hover:text-ink hover:bg-well transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -1078,7 +1089,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                   className="max-h-[65vh] max-w-full rounded-lg object-contain"
                 />
               </div>
-              <div className="flex items-center justify-between p-2 pt-1 border-t border-cyan-950 text-[11px] text-slate-400">
+              <div className="flex items-center justify-between p-2 pt-1 border-t border-line text-[11px] text-ink-3">
                 <span>{previewAttachment.notes || 'Sem observação'}</span>
                 <a
                   href={previewAttachment.url}

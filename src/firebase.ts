@@ -10,6 +10,14 @@ import {
   onSnapshot,
   type Firestore,
 } from 'firebase/firestore';
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL,
+  deleteObject,
+  type FirebaseStorage,
+} from 'firebase/storage';
 
 /**
  * KAMBAM Firebase setup.
@@ -43,6 +51,7 @@ export const isFirebaseConfigured = Boolean(
 
 let app: FirebaseApp | null = null;
 let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
 
 export function getDb(): Firestore | null {
   if (!isFirebaseConfigured) return null;
@@ -51,6 +60,15 @@ export function getDb(): Firestore | null {
     db = getFirestore(app);
   }
   return db;
+}
+
+export function getStorageInstance(): FirebaseStorage | null {
+  const database = getDb();
+  if (!database) return null;
+  if (!storage) {
+    storage = getStorage(database.app);
+  }
+  return storage;
 }
 
 export const COLLECTIONS = {
@@ -137,5 +155,39 @@ export const firestoreService = {
         console.warn(`Firestore subscription error (${collectionName}):`, err);
       }
     );
+  },
+};
+
+/**
+ * Firebase Storage: arquivos anexados aos cards.
+ * O conteúdo é salvo em `attachments/<id>/<nome>` e apenas a URL + caminho
+ * ficam no documento do Firestore (evita estourar o limite de 1 MiB por doc).
+ */
+export const storageService = {
+  async uploadFile(file: File): Promise<{ url: string; storagePath: string }> {
+    const bucket = getStorageInstance();
+    if (!bucket) throw new Error('Firebase Storage não configurado');
+
+    const id =
+      typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const storagePath = `attachments/${id}/${safeName}`;
+
+    const fileRef = ref(bucket, storagePath);
+    await uploadBytes(fileRef, file);
+    const url = await getDownloadURL(fileRef);
+    return { url, storagePath };
+  },
+
+  async deleteFile(storagePath: string): Promise<void> {
+    const bucket = getStorageInstance();
+    if (!bucket) return;
+    try {
+      await deleteObject(ref(bucket, storagePath));
+    } catch (e) {
+      console.warn('Não foi possível remover o arquivo do Storage:', e);
+    }
   },
 };

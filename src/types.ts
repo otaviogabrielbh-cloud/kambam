@@ -26,6 +26,7 @@ export interface CardAttachment {
   uploadedAt: string;
   notes?: string;
   isLink?: boolean;
+  storagePath?: string;
 }
 
 export interface ContentCard {
@@ -155,7 +156,7 @@ export const FORMAT_STYLE_OPTIONS: {
   { bg: 'bg-cyan-500/15', text: 'text-cyan-400', border: 'border-cyan-500/30', swatch: 'bg-cyan-500' },
   { bg: 'bg-orange-500/15', text: 'text-orange-400', border: 'border-orange-500/30', swatch: 'bg-orange-500' },
   { bg: 'bg-teal-500/15', text: 'text-teal-400', border: 'border-teal-500/30', swatch: 'bg-teal-500' },
-  { bg: 'bg-slate-500/15', text: 'text-slate-300', border: 'border-slate-500/30', swatch: 'bg-slate-400' },
+  { bg: 'bg-slate-500/15', text: 'text-ink-2', border: 'border-slate-500/30', swatch: 'bg-slate-400' },
 ];
 
 export const PRIORITY_CONFIG: Record<
@@ -179,7 +180,7 @@ export const PRIORITY_CONFIG: Record<
   Baixa: {
     label: 'Baixa',
     bg: 'bg-slate-500/15',
-    text: 'text-slate-300',
+    text: 'text-ink-2',
     dot: 'bg-slate-400',
     border: 'border-slate-500/30',
   },

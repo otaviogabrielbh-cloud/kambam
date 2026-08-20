@@ -17,7 +17,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-[#050b1a]/95 backdrop-blur-xl border-b border-cyan-950/60 px-4 lg:px-8 py-3.5 shadow-xl shadow-black/40">
+    <header className="sticky top-0 z-40 bg-page/95 backdrop-blur-xl border-b border-line px-4 lg:px-8 py-3.5 shadow-xl shadow-black/40">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Brand & Subtitle */}
         <div className="flex items-center gap-3">
@@ -26,13 +26,13 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-1.5 font-display">
+              <h1 className="text-xl font-bold tracking-tight text-ink flex items-center gap-1.5 font-display">
                 <span className="text-cyan-400 cyan-glow">KAMBAM</span>
-                <span className="text-slate-500 font-normal text-sm sm:text-base hidden sm:inline">-</span>
-                <span className="text-slate-200 text-sm sm:text-lg font-medium hidden sm:inline">Controle de tarefas</span>
+                <span className="text-ink-4 font-normal text-sm sm:text-base hidden sm:inline">-</span>
+                <span className="text-ink-2 text-sm sm:text-lg font-medium hidden sm:inline">Controle de tarefas</span>
               </h1>
             </div>
-            <p className="text-xs text-slate-400 font-medium tracking-wide">
+            <p className="text-xs text-ink-3 font-medium tracking-wide">
               Controle de Tarefas e Pipeline de Produção
             </p>
           </div>
@@ -41,14 +41,14 @@ export const Header: React.FC<HeaderProps> = ({
         {/* View Switcher & Action Controls */}
         <div className="flex items-center flex-wrap gap-2.5">
           {/* View Mode Toggle */}
-          <div className="flex items-center bg-[#091124] p-1 rounded-xl border border-cyan-950/60 shadow-inner">
+          <div className="flex items-center bg-card p-1 rounded-xl border border-line shadow-inner">
             <button
               id="view-toggle-kanban"
               onClick={() => onViewModeChange('kanban')}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
                 viewMode === 'kanban'
                   ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25 font-bold'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  : 'text-ink-3 hover:text-ink-2 hover:bg-well/60'
               }`}
             >
               <Kanban className="w-3.5 h-3.5" />
@@ -60,7 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 cursor-pointer ${
                 viewMode === 'calendar'
                   ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/25 font-bold'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                  : 'text-ink-3 hover:text-ink-2 hover:bg-well/60'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
@@ -74,7 +74,7 @@ export const Header: React.FC<HeaderProps> = ({
               id="btn-json-automation"
               onClick={onOpenJsonModal}
               title="Exportar/Importar JSON (n8n / Automações)"
-              className="p-2 rounded-xl bg-[#091124] text-slate-300 hover:text-cyan-300 hover:bg-[#0e1b38] border border-cyan-950/60 hover:border-cyan-800/50 transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm"
+              className="p-2 rounded-xl bg-card text-ink-2 hover:text-accent hover:bg-raise border border-line hover:border-cyan-800/50 transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm"
             >
               <Code2 className="w-4 h-4 text-cyan-400" />
               <span className="hidden xl:inline">Dados / n8n</span>
@@ -84,9 +84,9 @@ export const Header: React.FC<HeaderProps> = ({
               id="btn-settings"
               onClick={onOpenSettings}
               title="Configurações (Responsáveis e Checklists)"
-              className="p-2 rounded-xl bg-[#091124] text-slate-300 hover:text-cyan-300 hover:bg-[#0e1b38] border border-cyan-950/60 hover:border-cyan-800/50 transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm"
+              className="p-2 rounded-xl bg-card text-ink-2 hover:text-accent hover:bg-raise border border-line hover:border-cyan-800/50 transition-all flex items-center gap-1.5 text-xs font-medium cursor-pointer shadow-sm"
             >
-              <Settings className="w-4 h-4 text-slate-300" />
+              <Settings className="w-4 h-4 text-ink-2" />
               <span className="hidden xl:inline">Configurações</span>
             </button>
           </div>

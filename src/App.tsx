@@ -19,8 +19,28 @@ const STORAGE_KEY = 'kambam_content_pipeline_v1';
 const TEAM_STORAGE_KEY = 'kambam_team_members_v1';
 const TEMPLATE_STORAGE_KEY = 'kambam_checklist_templates_v1';
 const FORMAT_STORAGE_KEY = 'kambam_content_formats_v1';
+const THEME_STORAGE_KEY = 'kambam_theme_v1';
 
 export default function App() {
+  // Theme state: 'dark' | 'light', persisted in localStorage
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      return localStorage.getItem(THEME_STORAGE_KEY) === 'light' ? 'light' : 'dark';
+    } catch (e) {
+      return 'dark';
+    }
+  });
+
+  // Persist theme and sync the .theme-light class on <html> (used by index.css tokens)
+  useEffect(() => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    } catch (e) {
+      console.warn('Could not save theme to localStorage');
+    }
+    document.documentElement.classList.toggle('theme-light', theme === 'light');
+  }, [theme]);
+
   // Firebase load state: prevents overwriting remote data before hydration
   const [dataLoaded, setDataLoaded] = useState(false);
 
@@ -391,15 +411,15 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050b1a] text-slate-100 flex flex-col selection:bg-cyan-400 selection:text-slate-950">
+    <div className="min-h-screen bg-page text-ink flex flex-col selection:bg-cyan-400 selection:text-slate-950">
       {/* Loading state while Firestore hydrates */}
       {!dataLoaded && isFirebaseConfigured && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-[#050b1a]">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-page">
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/30 border border-cyan-300/40 animate-pulse">
               <Sparkles className="w-5 h-5 text-slate-950" />
             </div>
-            <p className="text-sm text-slate-300 font-medium">
+            <p className="text-sm text-ink-2 font-medium">
               Carregando dados do Firebase...
             </p>
           </div>
@@ -494,6 +514,8 @@ export default function App() {
         onSaveChecklistTemplates={setChecklistTemplates}
         formats={formats}
         onSaveFormats={setFormats}
+        theme={theme}
+        onThemeChange={setTheme}
       />
 
       {/* Toast Feedback Notification */}

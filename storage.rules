@@ -1,0 +1,13 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Anexos de cards do KAMBAM.
+    // Nota: o app não usa autenticação hoje, então leitura/escrita ficam
+    // abertas para a pasta de anexos funcionar sem login. Quando houver
+    // login (Firebase Auth), restringir com request.auth != null.
+    match /attachments/{allPaths=**} {
+      allow read: if true;
+      allow write: if true;
+    }
+  }
+}

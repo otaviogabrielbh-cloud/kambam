@@ -1,11 +1,20 @@
 <!doctype html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>KAMBAM - Controle de tarefas</title>
   <meta name="description" content="KAMBAM - Controle de tarefas e Pipeline de Produção" />
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem('kambam_theme_v1') === 'light') {
+          document.documentElement.classList.add('theme-light');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
@@ -13,7 +22,7 @@
     rel="stylesheet">
 </head>
 
-<body class="bg-[#070c18] text-slate-100 antialiased selection:bg-cyan-500 selection:text-black">
+<body class="bg-page text-ink antialiased selection:bg-cyan-500 selection:text-black">
   <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
 </body>

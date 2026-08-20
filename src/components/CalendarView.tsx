@@ -157,7 +157,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       case 'production':
         return 'bg-amber-950/80 border-amber-700/60 text-amber-300 hover:border-amber-500';
       case 'review':
-        return 'bg-cyan-950/80 border-cyan-700/60 text-cyan-300 hover:border-cyan-500';
+        return 'bg-cyan-950/80 border-cyan-700/60 text-accent hover:border-cyan-500';
       case 'done':
         return 'bg-emerald-950/80 border-emerald-700/60 text-emerald-300 hover:border-emerald-500';
     }
@@ -168,16 +168,16 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
       {/* Calendar Header & Controls */}
-      <div className="bg-[#070e20]/95 backdrop-blur-md p-4 rounded-2xl border border-cyan-950/70 shadow-2xl mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="bg-panel/95 backdrop-blur-md p-4 rounded-2xl border border-line shadow-2xl mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
             <CalendarIcon className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-white font-display capitalize">
+            <h2 className="text-lg font-bold text-ink font-display capitalize">
               {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
             </h2>
-            <p className="text-xs text-slate-400">
+            <p className="text-xs text-ink-3">
               {calMode === 'month' ? 'Visão Mensal de Publicações' : 'Visão Semanal de Produção'}
             </p>
           </div>
@@ -186,13 +186,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
         {/* View Toggle & Navigation */}
         <div className="flex items-center flex-wrap gap-2.5">
           {/* Month / Week Switch */}
-          <div className="flex items-center bg-[#050b18] p-1 rounded-xl border border-cyan-950/70">
+          <div className="flex items-center bg-well p-1 rounded-xl border border-line">
             <button
               onClick={() => setCalMode('month')}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 calMode === 'month'
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-ink-3 hover:text-ink-2'
               }`}
             >
               Mês
@@ -202,7 +202,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 calMode === 'week'
                   ? 'bg-cyan-500 text-slate-950 font-bold shadow-md shadow-cyan-500/25'
-                  : 'text-slate-400 hover:text-slate-200'
+                  : 'text-ink-3 hover:text-ink-2'
               }`}
             >
               Semana
@@ -212,24 +212,24 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           {/* Today Button */}
           <button
             onClick={goToToday}
-            className="px-3 py-1.5 rounded-xl bg-[#091224] hover:bg-[#0e1c38] border border-cyan-950/70 hover:border-cyan-800/50 text-xs font-semibold text-slate-300 hover:text-cyan-300 transition-colors cursor-pointer"
+            className="px-3 py-1.5 rounded-xl bg-card hover:bg-raise border border-line hover:border-cyan-800/50 text-xs font-semibold text-ink-2 hover:text-accent transition-colors cursor-pointer"
           >
             Hoje
           </button>
 
           {/* Prev / Next Buttons */}
-          <div className="flex items-center bg-[#050b18] rounded-xl border border-cyan-950/70 p-0.5">
+          <div className="flex items-center bg-well rounded-xl border border-line p-0.5">
             <button
               onClick={prevPeriod}
               title="Anterior"
-              className="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-[#0e1c38] rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-ink-3 hover:text-accent hover:bg-raise rounded-lg transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={nextPeriod}
               title="Próximo"
-              className="p-1.5 text-slate-400 hover:text-cyan-300 hover:bg-[#0e1c38] rounded-lg transition-colors cursor-pointer"
+              className="p-1.5 text-ink-3 hover:text-accent hover:bg-raise rounded-lg transition-colors cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -238,13 +238,13 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
       </div>
 
       {/* Calendar Grid */}
-      <div className="bg-[#070e20]/95 backdrop-blur-md rounded-2xl border border-cyan-950/70 shadow-2xl overflow-hidden">
+      <div className="bg-panel/95 backdrop-blur-md rounded-2xl border border-line shadow-2xl overflow-hidden">
         {/* Days of week header */}
-        <div className="grid grid-cols-7 border-b border-cyan-950/80 bg-[#050b18]/80">
+        <div className="grid grid-cols-7 border-b border-line bg-well/80">
           {weekDayLabels.map((day, idx) => (
             <div
               key={idx}
-              className="py-2.5 text-center text-xs font-bold uppercase tracking-wider text-slate-400 border-r border-cyan-950/80 last:border-r-0"
+              className="py-2.5 text-center text-xs font-bold uppercase tracking-wider text-ink-3 border-r border-line last:border-r-0"
             >
               {day}
             </div>
@@ -266,7 +266,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, dateStr)}
                 className={`min-h-[120px] sm:min-h-[140px] p-2 flex flex-col transition-all relative group ${
-                  !isCurrentMonth ? 'bg-[#040814]/70 text-slate-600' : 'bg-[#081124]/40 text-slate-300'
+                  !isCurrentMonth ? 'bg-well/70 text-ink-4' : 'bg-well/40 text-ink-2'
                 } ${isOver ? 'bg-cyan-950/50 ring-2 ring-cyan-400/80 shadow-inner' : ''} ${
                   isToday ? 'bg-cyan-950/30' : ''
                 }`}
@@ -278,8 +278,8 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                       isToday
                         ? 'bg-cyan-500 text-slate-950 shadow-sm shadow-cyan-500/50 font-extrabold'
                         : isCurrentMonth
-                        ? 'text-slate-300'
-                        : 'text-slate-600'
+                        ? 'text-ink-2'
+                        : 'text-ink-4'
                     }`}
                   >
                     {date.getDate()}
@@ -289,7 +289,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                   <button
                     onClick={() => onNewCardOnDate(dateStr)}
                     title={`Agendar conteúdo para ${formatDateBR(dateStr)}`}
-                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-[#0c1834] text-slate-400 hover:text-cyan-300 transition-all cursor-pointer"
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-raise text-ink-3 hover:text-accent transition-all cursor-pointer"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -324,14 +324,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] font-medium text-slate-100 line-clamp-2 leading-tight">
+                        <p className="text-[11px] font-medium text-ink line-clamp-2 leading-tight">
                           {card.title}
                         </p>
-                        <div className="flex items-center justify-between text-[9px] text-slate-400 pt-0.5 border-t border-white/10">
+                        <div className="flex items-center justify-between text-[9px] text-ink-3 pt-0.5 border-t border-line">
                           <div className="flex items-center gap-1 min-w-0">
                             <span className="truncate">{card.assignee.name.split(' ')[0]}</span>
                             {card.attachments && card.attachments.length > 0 && (
-                              <span className="inline-flex items-center text-[8px] text-cyan-300">
+                              <span className="inline-flex items-center text-[8px] text-accent">
                                 <Paperclip className="w-2 h-2" />
                               </span>
                             )}

@@ -11,6 +11,9 @@ import {
   Trash2,
   Check,
   Sparkles,
+  Sun,
+  Moon,
+  Palette,
 } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -22,6 +25,8 @@ interface SettingsModalProps {
   onSaveChecklistTemplates: (templates: ChecklistTemplate[]) => void;
   formats: ContentFormatItem[];
   onSaveFormats: (formats: ContentFormatItem[]) => void;
+  theme: 'dark' | 'light';
+  onThemeChange: (theme: 'dark' | 'light') => void;
 }
 
 const getInitials = (name: string): string => {
@@ -40,8 +45,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onSaveChecklistTemplates,
   formats,
   onSaveFormats,
+  theme,
+  onThemeChange,
 }) => {
-  const [tab, setTab] = useState<'members' | 'checklists' | 'formats'>('members');
+  const [tab, setTab] = useState<'members' | 'checklists' | 'formats' | 'appearance'>('members');
 
   // Member form state
   const [memberName, setMemberName] = useState('');
@@ -210,19 +217,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-2xl bg-[#070e20] border border-cyan-900/50 rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
+        className="relative w-full max-w-2xl bg-panel border border-line rounded-2xl shadow-2xl shadow-black/80 overflow-hidden my-8"
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-cyan-950/80 bg-[#050b18]/80">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-line bg-well/80">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-bold text-white font-display">
+              <h2 className="text-base sm:text-lg font-bold text-ink font-display">
                 Configurações
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-ink-3">
                 Cadastro de responsáveis, checklists de tarefas e formatos de conteúdo
               </p>
             </div>
@@ -230,20 +237,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#0e1c38] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-ink-3 hover:text-ink hover:bg-raise transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 px-4 sm:px-6 pt-4">
+        <div className="flex items-center flex-wrap gap-1.5 px-4 sm:px-6 pt-4">
           <button
             onClick={() => setTab('members')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               tab === 'members'
-                ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-sm ring-1 ring-cyan-400/40'
-                : 'bg-[#0a1428] border-cyan-950/80 text-slate-400 hover:text-slate-200 hover:border-cyan-800/60'
+                ? 'bg-cyan-500/15 border-cyan-400 text-cyan-500 shadow-sm ring-1 ring-cyan-400/40'
+                : 'bg-card border-line text-ink-3 hover:text-ink-2 hover:border-cyan-800/60'
             }`}
           >
             <Users className="w-3.5 h-3.5" />
@@ -253,8 +260,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onClick={() => setTab('checklists')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               tab === 'checklists'
-                ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-sm ring-1 ring-cyan-400/40'
-                : 'bg-[#0a1428] border-cyan-950/80 text-slate-400 hover:text-slate-200 hover:border-cyan-800/60'
+                ? 'bg-cyan-500/15 border-cyan-400 text-cyan-500 shadow-sm ring-1 ring-cyan-400/40'
+                : 'bg-card border-line text-ink-3 hover:text-ink-2 hover:border-cyan-800/60'
             }`}
           >
             <ListChecks className="w-3.5 h-3.5" />
@@ -264,12 +271,23 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             onClick={() => setTab('formats')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
               tab === 'formats'
-                ? 'bg-cyan-500/15 border-cyan-400 text-white shadow-sm ring-1 ring-cyan-400/40'
-                : 'bg-[#0a1428] border-cyan-950/80 text-slate-400 hover:text-slate-200 hover:border-cyan-800/60'
+                ? 'bg-cyan-500/15 border-cyan-400 text-cyan-500 shadow-sm ring-1 ring-cyan-400/40'
+                : 'bg-card border-line text-ink-3 hover:text-ink-2 hover:border-cyan-800/60'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
             Formatos
+          </button>
+          <button
+            onClick={() => setTab('appearance')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              tab === 'appearance'
+                ? 'bg-cyan-500/15 border-cyan-400 text-cyan-500 shadow-sm ring-1 ring-cyan-400/40'
+                : 'bg-card border-line text-ink-3 hover:text-ink-2 hover:border-cyan-800/60'
+            }`}
+          >
+            <Palette className="w-3.5 h-3.5" />
+            Aparência
           </button>
         </div>
 
@@ -278,16 +296,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           {tab === 'members' ? (
             <div className="space-y-4">
               {/* New Member Form */}
-              <form onSubmit={handleSubmitMember} className="bg-[#050b18] p-3.5 rounded-xl border border-cyan-950/80 space-y-3">
+              <form onSubmit={handleSubmitMember} className="bg-well p-3.5 rounded-xl border border-line space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-ink-2 uppercase tracking-wider">
                     {editingMemberId ? 'Editar Responsável' : 'Novo Responsável'}
                   </label>
                   {editingMemberId && (
                     <button
                       type="button"
                       onClick={resetMemberForm}
-                      className="text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer"
+                      className="text-[11px] text-ink-3 hover:text-ink-2 cursor-pointer"
                     >
                       Cancelar edição
                     </button>
@@ -304,7 +322,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={memberName}
                     onChange={(e) => setMemberName(e.target.value)}
                     placeholder="Nome do responsável (ex: João da Silva)"
-                    className="flex-1 bg-[#081226] text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 border border-cyan-950/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
+                    className="flex-1 bg-well text-ink placeholder-ink-4 rounded-xl px-3.5 py-2.5 border border-line focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
                   />
                   <button
                     type="submit"
@@ -317,7 +335,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Color picker */}
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] text-slate-500 mr-1">Cor:</span>
+                  <span className="text-[11px] text-ink-4 mr-1">Cor:</span>
                   {ASSIGNEE_COLORS.map((color) => {
                     const isSelected = color === memberColor;
                     return (
@@ -327,7 +345,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         onClick={() => setMemberColor(color)}
                         className={`w-6 h-6 rounded-full transition-all cursor-pointer ${
                           isSelected
-                            ? 'ring-2 ring-cyan-300 ring-offset-2 ring-offset-[#050b18] scale-110'
+                            ? 'ring-2 ring-cyan-300 ring-offset-2 ring-offset-well scale-110'
                             : 'hover:scale-110 opacity-70 hover:opacity-100'
                         } ${color.split(' ')[0]}`}
                         title={color}
@@ -340,29 +358,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Members List */}
               <div className="space-y-2">
                 {teamMembers.length === 0 && (
-                  <p className="text-center text-sm text-slate-500 py-6">
+                  <p className="text-center text-sm text-ink-4 py-6">
                     Nenhum responsável cadastrado ainda.
                   </p>
                 )}
                 {teamMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-[#0a1329] border border-cyan-950/70 hover:border-cyan-900/60 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl bg-card border border-line hover:border-line transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold ${member.color}`}>
                         {member.initials}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-100">{member.name}</p>
-                        <p className="text-[11px] text-slate-500 font-mono">id: {member.id}</p>
+                        <p className="text-sm font-semibold text-ink">{member.name}</p>
+                        <p className="text-[11px] text-ink-4 font-mono">id: {member.id}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => handleStartEditMember(member)}
                         title="Editar"
-                        className="p-2 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-[#0e1c38] transition-colors cursor-pointer"
+                        className="p-2 rounded-lg text-ink-3 hover:text-accent hover:bg-raise transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -376,7 +394,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           </button>
                           <button
                             onClick={() => setConfirmDeleteMemberId(null)}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-[11px] cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-well text-ink-2 hover:bg-well text-[11px] cursor-pointer"
                           >
                             Cancelar
                           </button>
@@ -385,7 +403,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <button
                           onClick={() => setConfirmDeleteMemberId(member.id)}
                           title="Excluir"
-                          className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
+                          className="p-2 rounded-lg text-ink-3 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -398,16 +416,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           ) : tab === 'checklists' ? (
             <div className="space-y-4">
               {/* New Template Form */}
-              <form onSubmit={handleSubmitTemplate} className="bg-[#050b18] p-3.5 rounded-xl border border-cyan-950/80 space-y-3">
+              <form onSubmit={handleSubmitTemplate} className="bg-well p-3.5 rounded-xl border border-line space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-ink-2 uppercase tracking-wider">
                     {editingTemplateId ? 'Editar Checklist' : 'Novo Checklist de Tarefas'}
                   </label>
                   {editingTemplateId && (
                     <button
                       type="button"
                       onClick={resetTemplateForm}
-                      className="text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer"
+                      className="text-[11px] text-ink-3 hover:text-ink-2 cursor-pointer"
                     >
                       Cancelar edição
                     </button>
@@ -420,11 +438,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={templateName}
                   onChange={(e) => setTemplateName(e.target.value)}
                   placeholder="Nome do checklist (ex: Produção de Vídeo)"
-                  className="w-full bg-[#081226] text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 border border-cyan-950/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
+                  className="w-full bg-well text-ink placeholder-ink-4 rounded-xl px-3.5 py-2.5 border border-line focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
                 />
 
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">
+                  <label className="block text-[11px] text-ink-4 mb-1">
                     Tarefas (uma por linha)
                   </label>
                   <textarea
@@ -432,7 +450,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={templateItemsText}
                     onChange={(e) => setTemplateItemsText(e.target.value)}
                     placeholder={'Estruturar roteiro\nGravar vídeo\nEditar e revisar'}
-                    className="w-full bg-[#081226] text-slate-100 placeholder-slate-500 rounded-xl p-3 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs resize-y"
+                    className="w-full bg-well text-ink placeholder-ink-4 rounded-xl p-3 border border-line focus:border-cyan-400 outline-none text-xs resize-y"
                   ></textarea>
                 </div>
 
@@ -448,26 +466,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Templates List */}
               <div className="space-y-2">
                 {checklistTemplates.length === 0 && (
-                  <p className="text-center text-sm text-slate-500 py-6">
+                  <p className="text-center text-sm text-ink-4 py-6">
                     Nenhum checklist cadastrado ainda.
                   </p>
                 )}
                 {checklistTemplates.map((tpl) => (
                   <div
                     key={tpl.id}
-                    className="flex items-start justify-between gap-3 p-3 rounded-xl bg-[#0a1329] border border-cyan-950/70 hover:border-cyan-900/60 transition-colors"
+                    className="flex items-start justify-between gap-3 p-3 rounded-xl bg-card border border-line hover:border-line transition-colors"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-slate-100">{tpl.name}</p>
+                      <p className="text-sm font-semibold text-ink">{tpl.name}</p>
                       <ul className="mt-1.5 space-y-0.5">
                         {tpl.items.slice(0, 4).map((item, idx) => (
-                          <li key={idx} className="flex items-center gap-1.5 text-xs text-slate-400">
+                          <li key={idx} className="flex items-center gap-1.5 text-xs text-ink-3">
                             <Check className="w-3 h-3 text-cyan-400 shrink-0" />
                             <span className="truncate">{item}</span>
                           </li>
                         ))}
                         {tpl.items.length > 4 && (
-                          <li className="text-[11px] text-slate-500 font-mono">
+                          <li className="text-[11px] text-ink-4 font-mono">
                             +{tpl.items.length - 4} tarefas
                           </li>
                         )}
@@ -477,7 +495,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                       <button
                         onClick={() => handleStartEditTemplate(tpl)}
                         title="Editar"
-                        className="p-2 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-[#0e1c38] transition-colors cursor-pointer"
+                        className="p-2 rounded-lg text-ink-3 hover:text-accent hover:bg-raise transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -491,7 +509,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           </button>
                           <button
                             onClick={() => setConfirmDeleteTemplateId(null)}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-[11px] cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-well text-ink-2 hover:bg-well text-[11px] cursor-pointer"
                           >
                             Cancelar
                           </button>
@@ -500,7 +518,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <button
                           onClick={() => setConfirmDeleteTemplateId(tpl.id)}
                           title="Excluir"
-                          className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
+                          className="p-2 rounded-lg text-ink-3 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -510,19 +528,19 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 ))}
               </div>
             </div>
-          ) : (
+          ) : tab === 'formats' ? (
             <div className="space-y-4">
               {/* New Format Form */}
-              <form onSubmit={handleSubmitFormat} className="bg-[#050b18] p-3.5 rounded-xl border border-cyan-950/80 space-y-3">
+              <form onSubmit={handleSubmitFormat} className="bg-well p-3.5 rounded-xl border border-line space-y-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  <label className="text-xs font-semibold text-ink-2 uppercase tracking-wider">
                     {editingFormatId ? 'Editar Formato' : 'Novo Formato'}
                   </label>
                   {editingFormatId && (
                     <button
                       type="button"
                       onClick={resetFormatForm}
-                      className="text-[11px] text-slate-400 hover:text-slate-200 cursor-pointer"
+                      className="text-[11px] text-ink-3 hover:text-ink-2 cursor-pointer"
                     >
                       Cancelar edição
                     </button>
@@ -539,7 +557,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     value={formatName}
                     onChange={(e) => setFormatName(e.target.value)}
                     placeholder="Nome do formato (ex: Podcast)"
-                    className="flex-1 bg-[#081226] text-slate-100 placeholder-slate-500 rounded-xl px-3.5 py-2.5 border border-cyan-950/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
+                    className="flex-1 bg-well text-ink placeholder-ink-4 rounded-xl px-3.5 py-2.5 border border-line focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none text-sm transition-all"
                   />
                   <button
                     type="submit"
@@ -552,7 +570,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Icon picker */}
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1.5">Ícone</label>
+                  <label className="block text-[11px] text-ink-4 mb-1.5">Ícone</label>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {FORMAT_ICON_OPTIONS.map((iconName) => {
                       const isSelected = iconName === formatIcon;
@@ -563,8 +581,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClick={() => setFormatIcon(iconName)}
                           className={`p-2 rounded-lg border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-cyan-950/50 border-cyan-400 text-cyan-300 ring-1 ring-cyan-400/50'
-                              : 'border-cyan-950/80 text-slate-400 hover:text-cyan-300 hover:border-cyan-800/60'
+                              ? 'bg-cyan-950/50 border-cyan-400 text-accent ring-1 ring-cyan-400/50'
+                              : 'border-line text-ink-3 hover:text-accent hover:border-cyan-800/60'
                           }`}
                           title={iconName}
                         >
@@ -577,7 +595,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
                 {/* Color picker */}
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1.5">Cor</label>
+                  <label className="block text-[11px] text-ink-4 mb-1.5">Cor</label>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     {FORMAT_STYLE_OPTIONS.map((style) => {
                       const isSelected =
@@ -589,7 +607,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           onClick={() => setFormatStyle(style)}
                           className={`w-6 h-6 rounded-full transition-all cursor-pointer ${
                             isSelected
-                              ? 'ring-2 ring-cyan-300 ring-offset-2 ring-offset-[#050b18] scale-110'
+                              ? 'ring-2 ring-cyan-300 ring-offset-2 ring-offset-well scale-110'
                               : 'hover:scale-110 opacity-70 hover:opacity-100'
                           } ${style.swatch}`}
                           title={style.text}
@@ -603,29 +621,29 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               {/* Formats List */}
               <div className="space-y-2">
                 {formats.length === 0 && (
-                  <p className="text-center text-sm text-slate-500 py-6">
+                  <p className="text-center text-sm text-ink-4 py-6">
                     Nenhum formato cadastrado ainda.
                   </p>
                 )}
                 {formats.map((format) => (
                   <div
                     key={format.id}
-                    className="flex items-center justify-between gap-3 p-3 rounded-xl bg-[#0a1329] border border-cyan-950/70 hover:border-cyan-900/60 transition-colors"
+                    className="flex items-center justify-between gap-3 p-3 rounded-xl bg-card border border-line hover:border-line transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border ${format.bg} ${format.text} ${format.border}`}>
                         <FormatIcon iconName={format.iconName} className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-100 truncate">{format.name}</p>
-                        <p className="text-[11px] text-slate-500 font-mono">id: {format.id}</p>
+                        <p className="text-sm font-semibold text-ink truncate">{format.name}</p>
+                        <p className="text-[11px] text-ink-4 font-mono">id: {format.id}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button
                         onClick={() => handleStartEditFormat(format)}
                         title="Editar"
-                        className="p-2 rounded-lg text-slate-400 hover:text-cyan-300 hover:bg-[#0e1c38] transition-colors cursor-pointer"
+                        className="p-2 rounded-lg text-ink-3 hover:text-accent hover:bg-raise transition-colors cursor-pointer"
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </button>
@@ -639,7 +657,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                           </button>
                           <button
                             onClick={() => setConfirmDeleteFormatId(null)}
-                            className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-[11px] cursor-pointer"
+                            className="px-2.5 py-1.5 rounded-lg bg-well text-ink-2 hover:bg-well text-[11px] cursor-pointer"
                           >
                             Cancelar
                           </button>
@@ -648,7 +666,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                         <button
                           onClick={() => setConfirmDeleteFormatId(format.id)}
                           title="Excluir"
-                          className="p-2 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
+                          className="p-2 rounded-lg text-ink-3 hover:text-red-400 hover:bg-red-950/40 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -656,6 +674,75 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Theme Selector */}
+              <div className="bg-well p-4 rounded-xl border border-line">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Tema da interface</p>
+                    <p className="text-xs text-ink-3 mt-0.5">
+                      Escolha entre o tema escuro (padrão) e o tema claro.
+                    </p>
+                  </div>
+                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 border bg-card text-accent border-line">
+                    {theme === 'light' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange('dark')}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                      theme === 'dark'
+                        ? 'bg-cyan-950/40 border-cyan-400 ring-1 ring-cyan-400/50'
+                        : 'bg-card border-line hover:border-cyan-800/60'
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-page border border-line flex items-center justify-center text-ink shrink-0">
+                      <Moon className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-ink">Escuro</p>
+                        {theme === 'dark' && (
+                          <Check className="w-3.5 h-3.5 text-cyan-400" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-ink-3 mt-0.5 leading-relaxed">
+                        Visual imersivo com fundo escuro e destaques em ciano.
+                      </p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onThemeChange('light')}
+                    className={`p-4 rounded-xl border text-left transition-all cursor-pointer flex items-start gap-3 ${
+                      theme === 'light'
+                        ? 'bg-cyan-950/40 border-cyan-400 ring-1 ring-cyan-400/50'
+                        : 'bg-card border-line hover:border-cyan-800/60'
+                    }`}
+                  >
+                    <div className="w-9 h-9 rounded-lg bg-white border border-slate-300 flex items-center justify-center text-slate-600 shrink-0">
+                      <Sun className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-semibold text-ink">Claro</p>
+                        {theme === 'light' && (
+                          <Check className="w-3.5 h-3.5 text-cyan-400" />
+                        )}
+                      </div>
+                      <p className="text-[11px] text-ink-3 mt-0.5 leading-relaxed">
+                        Fundo claro e superfícies brancas para ambientes bem iluminados.
+                      </p>
+                    </div>
+                  </button>
+                </div>
               </div>
             </div>
           )}

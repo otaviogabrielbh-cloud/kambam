@@ -62,7 +62,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   };
 
   return (
-    <div className="bg-[#050d1c] border-b border-cyan-950/60 px-4 lg:px-8 py-2.5">
+    <div className="bg-page border-b border-line px-4 lg:px-8 py-2.5">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-3">
         {/* Search input */}
         <div className="relative flex-1 min-w-[240px] max-w-md">
@@ -73,12 +73,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             value={filters.search}
             onChange={handleSearchChange}
             placeholder="Buscar por título, pauta ou anotações..."
-            className="w-full bg-[#081226] text-sm text-slate-200 placeholder-slate-500 rounded-xl pl-9 pr-8 py-2 border border-cyan-950/80 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none transition-all shadow-inner"
+            className="w-full bg-well text-sm text-ink-2 placeholder-ink-4 rounded-xl pl-9 pr-8 py-2 border border-line focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50 outline-none transition-all shadow-inner"
           />
           {filters.search && (
             <button
               onClick={() => onFilterChange({ ...filters, search: '' })}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 cursor-pointer"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink-2 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -93,15 +93,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               id="filter-format-select"
               value={filters.format}
               onChange={handleFormatChange}
-              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-[#081226] border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
+              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-well border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
                 filters.format !== 'all'
-                  ? 'border-cyan-400 text-cyan-300 font-semibold bg-cyan-950/40 shadow-cyan-500/10'
-                  : 'border-cyan-950/80 text-slate-300 hover:border-cyan-800/60'
+                  ? 'border-cyan-400 text-accent font-semibold bg-cyan-950/40 shadow-cyan-500/10'
+                  : 'border-line text-ink-2 hover:border-cyan-800/60'
               }`}
             >
-              <option value="all" className="bg-[#081226] text-slate-300">Formato: Todos</option>
+              <option value="all" className="bg-well text-ink-2">Formato: Todos</option>
               {formats.map((f) => (
-                <option key={f.id} value={f.name} className="bg-[#081226] text-slate-300">
+                <option key={f.id} value={f.name} className="bg-well text-ink-2">
                   {f.name}
                 </option>
               ))}
@@ -114,15 +114,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               id="filter-assignee-select"
               value={filters.assigneeId}
               onChange={handleAssigneeChange}
-              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-[#081226] border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
+              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-well border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
                 filters.assigneeId !== 'all'
-                  ? 'border-cyan-400 text-cyan-300 font-semibold bg-cyan-950/40 shadow-cyan-500/10'
-                  : 'border-cyan-950/80 text-slate-300 hover:border-cyan-800/60'
+                  ? 'border-cyan-400 text-accent font-semibold bg-cyan-950/40 shadow-cyan-500/10'
+                  : 'border-line text-ink-2 hover:border-cyan-800/60'
               }`}
             >
-              <option value="all" className="bg-[#081226] text-slate-300">Responsável: Todos</option>
+              <option value="all" className="bg-well text-ink-2">Responsável: Todos</option>
               {teamMembers.map((member) => (
-                <option key={member.id} value={member.id} className="bg-[#081226] text-slate-300">
+                <option key={member.id} value={member.id} className="bg-well text-ink-2">
                   {member.name}
                 </option>
               ))}
@@ -135,16 +135,16 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               id="filter-priority-select"
               value={filters.priority}
               onChange={handlePriorityChange}
-              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-[#081226] border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
+              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-well border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
                 filters.priority !== 'all'
-                  ? 'border-cyan-400 text-cyan-300 font-semibold bg-cyan-950/40 shadow-cyan-500/10'
-                  : 'border-cyan-950/80 text-slate-300 hover:border-cyan-800/60'
+                  ? 'border-cyan-400 text-accent font-semibold bg-cyan-950/40 shadow-cyan-500/10'
+                  : 'border-line text-ink-2 hover:border-cyan-800/60'
               }`}
             >
-              <option value="all" className="bg-[#081226] text-slate-300">Prioridade: Todas</option>
-              <option value="Alta" className="bg-[#081226] text-slate-300">Alta</option>
-              <option value="Média" className="bg-[#081226] text-slate-300">Média</option>
-              <option value="Baixa" className="bg-[#081226] text-slate-300">Baixa</option>
+              <option value="all" className="bg-well text-ink-2">Prioridade: Todas</option>
+              <option value="Alta" className="bg-well text-ink-2">Alta</option>
+              <option value="Média" className="bg-well text-ink-2">Média</option>
+              <option value="Baixa" className="bg-well text-ink-2">Baixa</option>
             </select>
           </div>
 
@@ -154,15 +154,15 @@ export const FilterBar: React.FC<FilterBarProps> = ({
               id="filter-tag-select"
               value={filters.tag}
               onChange={handleTagChange}
-              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-[#081226] border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
+              className={`text-xs rounded-xl px-3 py-2 pr-8 bg-well border outline-none cursor-pointer transition-colors appearance-none shadow-sm ${
                 filters.tag !== 'all'
-                  ? 'border-cyan-400 text-cyan-300 font-semibold bg-cyan-950/40 shadow-cyan-500/10'
-                  : 'border-cyan-950/80 text-slate-300 hover:border-cyan-800/60'
+                  ? 'border-cyan-400 text-accent font-semibold bg-cyan-950/40 shadow-cyan-500/10'
+                  : 'border-line text-ink-2 hover:border-cyan-800/60'
               }`}
             >
-              <option value="all" className="bg-[#081226] text-slate-300">Tag: Todas</option>
+              <option value="all" className="bg-well text-ink-2">Tag: Todas</option>
               {availableTags.map((tag) => (
-                <option key={tag} value={tag} className="bg-[#081226] text-slate-300">
+                <option key={tag} value={tag} className="bg-well text-ink-2">
                   #{tag}
                 </option>
               ))}
@@ -176,7 +176,7 @@ export const FilterBar: React.FC<FilterBarProps> = ({
             className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
               filters.onlyOverdue
                 ? 'bg-red-500/20 text-red-300 border-red-500 shadow-red-500/30'
-                : 'bg-[#081226] text-slate-400 border-cyan-950/80 hover:border-cyan-800/60 hover:text-slate-200'
+                : 'bg-well text-ink-3 border-line hover:border-cyan-800/60 hover:text-ink-2'
             }`}
           >
             <span className={`w-2 h-2 rounded-full ${filters.onlyOverdue ? 'bg-red-500 animate-pulse' : 'bg-slate-500'}`}></span>

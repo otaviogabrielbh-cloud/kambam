@@ -1,10 +1,59 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   KAMBAM Design Tokens
+   `--t-*` são as "fontes da verdade" por tema (dark padrão / .theme-light).
+   O `@theme` abaixo mapeia os tokens para utilitários do Tailwind
+   (bg-page, text-ink, border-line, placeholder-ink-4, etc.), que são
+   resolvidos em runtime e alternam junto com a classe .theme-light.
+--------------------------------------------------------------------------- */
+:root {
+  --t-page: #050b1a;
+  --t-panel: #070e20;
+  --t-card: #0a1329;
+  --t-well: #081226;
+  --t-raise: #0e1c38;
+  --t-ink: #ffffff;
+  --t-ink-2: #cbd5e1;
+  --t-ink-3: #94a3b8;
+  --t-ink-4: #64748b;
+  --t-line: rgba(8, 51, 68, 0.7);
+  --t-accent: #67e8f9;
+}
+
+.theme-light {
+  --t-page: #f1f5f9;
+  --t-panel: #ffffff;
+  --t-card: #ffffff;
+  --t-well: #e2e8f0;
+  --t-raise: #e2e8f0;
+  --t-ink: #0f172a;
+  --t-ink-2: #1e293b;
+  --t-ink-3: #475569;
+  --t-ink-4: #94a3b8;
+  --t-line: #cbd5e1;
+  --t-accent: #0e7490;
+}
+
+@theme {
+  --color-page: var(--t-page);
+  --color-panel: var(--t-panel);
+  --color-card: var(--t-card);
+  --color-well: var(--t-well);
+  --color-raise: var(--t-raise);
+  --color-ink: var(--t-ink);
+  --color-ink-2: var(--t-ink-2);
+  --color-ink-3: var(--t-ink-3);
+  --color-ink-4: var(--t-ink-4);
+  --color-line: var(--t-line);
+  --color-accent: var(--t-accent);
+}
+
 @layer base {
   body {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background-color: #050b1a;
-    color: #f1f5f9;
+    background-color: var(--t-page);
+    color: var(--t-ink-2);
   }
 
   h1, h2, h3, h4, .font-display {
@@ -36,6 +85,19 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(6, 182, 212, 0.5);
   box-shadow: 0 0 10px rgba(6, 182, 212, 0.4);
+}
+
+.theme-light ::-webkit-scrollbar-track {
+  background: rgba(226, 232, 240, 0.8);
+}
+
+.theme-light ::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border: 1px solid rgba(100, 116, 139, 0.15);
+}
+
+.theme-light ::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.55);
 }
 
 .cyan-glow {

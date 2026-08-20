@@ -82,14 +82,17 @@ export function generateCardPDF(card: ContentCard): void {
   const fileAttachmentsHtml =
     fileAttachments.length > 0
       ? fileAttachments
-          .map(
-            (a) =>
-              `<li style="padding:4px 0; font-size:12px; color:#475569;">
-                📄 <strong>${a.name}</strong>${a.size ? ` <span style="color:#94a3b8;">(${formatFileSize(a.size)})</span>` : ''}
+          .map((a) => {
+            const isRemote = /^https?:\/\//i.test(a.url);
+            const nameHtml = isRemote
+              ? `<a href="${a.url}" target="_blank" style="color:#0369a1;">${a.name}</a>`
+              : `<strong>${a.name}</strong>`;
+            return `<li style="padding:4px 0; font-size:12px; color:#475569;">
+                📄 ${nameHtml}${a.size ? ` <span style="color:#94a3b8;">(${formatFileSize(a.size)})</span>` : ''}
                 ${a.notes ? ` — <em style="color:#64748b;">${a.notes}</em>` : ''}
                 <span style="color:#94a3b8; font-size:11px;"> · ${formatDateTime(a.uploadedAt)}</span>
-              </li>`
-          )
+              </li>`;
+          })
           .join('')
       : '<li style="color:#94a3b8; font-size:12px;">Nenhum arquivo anexado</li>';
 
