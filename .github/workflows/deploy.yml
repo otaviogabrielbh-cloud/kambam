@@ -5,6 +5,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: firebase-hosting
+  cancel-in-progress: true
+
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -19,9 +26,5 @@ jobs:
       - run: npm ci
       - run: npm run build
 
-      - uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseToken: ${{ secrets.FIREBASE_TOKEN }}
-          channelId: live
-          projectId: kambam-57c9e
+      - name: Deploy to Firebase Hosting
+        run: npx firebase-tools deploy --only hosting --project kambam-57c9e --token "${{ secrets.FIREBASE_TOKEN }}" --non-interactive
