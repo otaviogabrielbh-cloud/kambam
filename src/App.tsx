@@ -13,6 +13,7 @@ import { isOverdue } from './utils';
 import { ToastMessage } from './components/ToastMessage';
 import { Sparkles } from 'lucide-react';
 import { firestoreService, isFirebaseConfigured, COLLECTIONS } from './firebase';
+import { generateCardPDF } from './pdfGenerator';
 
 const STORAGE_KEY = 'kambam_content_pipeline_v1';
 const TEAM_STORAGE_KEY = 'kambam_team_members_v1';
@@ -334,15 +335,30 @@ export default function App() {
       done: 'Concluídos',
     };
 
+    let movedCard: ContentCard | undefined;
     setCards((prev) =>
       prev.map((c) => {
         if (c.id === cardId) {
-          return { ...c, stage: newStage, updatedAt: new Date().toISOString() };
+          movedCard = { ...c, stage: newStage, updatedAt: new Date().toISOString() };
+          return movedCard;
         }
         return c;
       })
     );
     showToast(`Card movido para "${stageTitles[newStage]}"`, 'info');
+
+    // When card reaches 'done', offer to generate PDF
+    if (newStage === 'done' && movedCard) {
+      const cardSnapshot = movedCard;
+      setTimeout(() => {
+        const wantsPDF = window.confirm(
+          `✅ "${cardSnapshot.title.slice(0, 50)}" foi concluído!\n\nDeseja gerar um PDF com o resumo desta tarefa?`
+        );
+        if (wantsPDF) {
+          generateCardPDF(cardSnapshot);
+        }
+      }, 400);
+    }
   };
 
   const handleUpdateCardDate = (cardId: string, newDate: string) => {

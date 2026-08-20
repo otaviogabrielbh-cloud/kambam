@@ -48,7 +48,9 @@ import {
   Eye,
   Check,
   Loader2,
+  FileDown,
 } from 'lucide-react';
+import { generateCardPDF } from '../pdfGenerator';
 
 interface CardModalProps {
   isOpen: boolean;
@@ -984,7 +986,7 @@ export const CardModal: React.FC<CardModalProps> = ({
                     <span>Duplicar</span>
                   </button>
 
-                  <button
+                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
                     className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-950/30 hover:bg-red-950/40 text-red-400 text-xs font-medium border border-red-900/40 transition-colors cursor-pointer"
@@ -995,6 +997,38 @@ export const CardModal: React.FC<CardModalProps> = ({
                 </>
               )}
             </div>
+
+            {/* PDF Generator — always visible when editing */}
+            {isEditing && card && (
+              <button
+                type="button"
+                onClick={() => {
+                  // Build the current in-progress card snapshot for PDF
+                  const teamMemberFound =
+                    teamMembers.find((m) => m.id === assigneeId) ||
+                    teamMembers[0] ||
+                    card.assignee;
+                  generateCardPDF({
+                    ...card,
+                    title: title.trim() || card.title,
+                    format: format || card.format,
+                    scheduledDate,
+                    assignee: teamMemberFound,
+                    priority,
+                    tags,
+                    checklist,
+                    notes: notes.trim(),
+                    attachments,
+                    stage,
+                  });
+                }}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-950/30 hover:bg-emerald-950/50 text-emerald-400 text-xs font-semibold border border-emerald-800/50 hover:border-emerald-600/60 transition-all cursor-pointer"
+                title="Gerar resumo em PDF deste card"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Gerar PDF</span>
+              </button>
+            )}
 
             <div className="flex items-center gap-2 self-end sm:self-auto">
               <button
