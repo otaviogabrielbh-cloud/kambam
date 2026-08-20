@@ -17,6 +17,17 @@ export interface Assignee {
   color: string;
 }
 
+export interface CardAttachment {
+  id: string;
+  name: string;
+  size?: number;
+  type?: string;
+  url: string;
+  uploadedAt: string;
+  notes?: string;
+  isLink?: boolean;
+}
+
 export interface ContentCard {
   id: string;
   title: string;
@@ -27,6 +38,7 @@ export interface ContentCard {
   tags: string[];
   checklist: ChecklistItem[];
   notes: string;
+  attachments?: CardAttachment[];
   stage: StageId;
   createdAt: string;
   updatedAt?: string;

@@ -7,6 +7,7 @@ import {
   Calendar as CalendarIcon,
   AlertCircle,
   Plus,
+  Paperclip,
 } from 'lucide-react';
 
 interface CalendarViewProps {
@@ -327,7 +328,14 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
                           {card.title}
                         </p>
                         <div className="flex items-center justify-between text-[9px] text-slate-400 pt-0.5 border-t border-white/10">
-                          <span className="truncate">{card.assignee.name.split(' ')[0]}</span>
+                          <div className="flex items-center gap-1 min-w-0">
+                            <span className="truncate">{card.assignee.name.split(' ')[0]}</span>
+                            {card.attachments && card.attachments.length > 0 && (
+                              <span className="inline-flex items-center text-[8px] text-cyan-300">
+                                <Paperclip className="w-2 h-2" />
+                              </span>
+                            )}
+                          </div>
                           <span className="font-semibold uppercase tracking-wider text-[8px] opacity-80">
                             {STAGES.find((s) => s.id === card.stage)?.title}
                           </span>

@@ -10,6 +10,7 @@ import {
   ChevronRight,
   AlertCircle,
   GripVertical,
+  Paperclip,
 } from 'lucide-react';
 
 interface ContentCardItemProps {
@@ -175,6 +176,17 @@ export const ContentCardItem: React.FC<ContentCardItemProps> = ({
           {card.notes && (
             <span title="Possui anotações" className="text-slate-500 hover:text-cyan-300 transition-colors">
               <FileText className="w-3 h-3" />
+            </span>
+          )}
+
+          {/* Attachments preview */}
+          {card.attachments && card.attachments.length > 0 && (
+            <span
+              title={`${card.attachments.length} arquivo(s) / anexo(s) no histórico`}
+              className="inline-flex items-center gap-0.5 text-[10px] font-mono text-cyan-400/90 bg-cyan-950/40 px-1 py-0.2 rounded border border-cyan-800/40 hover:text-cyan-300 transition-colors"
+            >
+              <Paperclip className="w-2.5 h-2.5" />
+              <span>{card.attachments.length}</span>
             </span>
           )}
         </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ContentCard,
   ContentFormat,
@@ -8,11 +8,19 @@ import {
   Assignee,
   ChecklistTemplate,
   ContentFormatItem,
+  CardAttachment,
   POPULAR_TAGS,
   STAGES,
   PRIORITY_CONFIG,
 } from '../types';
-import { getPreviousStage, getNextStage, getChecklistProgress, formatDateBR } from '../utils';
+import {
+  getPreviousStage,
+  getNextStage,
+  getChecklistProgress,
+  formatDateBR,
+  formatFileSize,
+  formatDateTimeBR,
+} from '../utils';
 import {
   X,
   Plus,
@@ -28,6 +36,18 @@ import {
   FileText,
   AlertTriangle,
   Sparkles,
+  Paperclip,
+  UploadCloud,
+  Link as LinkIcon,
+  Download,
+  ExternalLink,
+  File,
+  FileImage,
+  Film,
+  Music,
+  Eye,
+  Check,
+  Loader2,
 } from 'lucide-react';
 
 interface CardModalProps {
@@ -73,7 +93,18 @@ export const CardModal: React.FC<CardModalProps> = ({
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
   const [newChecklistText, setNewChecklistText] = useState('');
   const [notes, setNotes] = useState('');
+  const [attachments, setAttachments] = useState<CardAttachment[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  // Attachment input states
+  const [attachmentTab, setAttachmentTab] = useState<'upload' | 'link'>('upload');
+  const [linkUrl, setLinkUrl] = useState('');
+  const [linkName, setLinkName] = useState('');
+  const [fileNote, setFileNote] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
+  const [previewAttachment, setPreviewAttachment] = useState<CardAttachment | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (card) {
@@ -86,6 +117,7 @@ export const CardModal: React.FC<CardModalProps> = ({
       setTags([...card.tags]);
       setChecklist(card.checklist ? [...card.checklist] : []);
       setNotes(card.notes || '');
+      setAttachments(card.attachments ? [...card.attachments] : []);
     } else {
       // Default for new card
       const today = new Date();
@@ -116,8 +148,13 @@ export const CardModal: React.FC<CardModalProps> = ({
             ]
       );
       setNotes('');
+      setAttachments([]);
     }
     setShowDeleteConfirm(false);
+    setLinkUrl('');
+    setLinkName('');
+    setFileNote('');
+    setPreviewAttachment(null);
   }, [card, initialStage, initialDate, isOpen, formats]);
 
   // Checklist handlers
@@ -153,6 +190,111 @@ export const CardModal: React.FC<CardModalProps> = ({
     setTags((prev) => prev.filter((t) => t !== tagToRemove));
   };
 
+  // Attachment handlers
+  const handleFileUpload = (fileList: FileList | null) => {
+    if (!fileList || fileList.length === 0) return;
+    setIsUploading(true);
+
+    const filesArray = Array.from(fileList);
+    const readPromises = filesArray.map((file) => {
+      return new Promise<CardAttachment>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve({
+            id: `att-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+            name: file.name,
+            size: file.size,
+            type: file.type || 'application/octet-stream',
+            url: reader.result as string,
+            uploadedAt: new Date().toISOString(),
+            notes: fileNote.trim() || undefined,
+            isLink: false,
+          });
+        };
+        reader.onerror = (err) => reject(err);
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readPromises)
+      .then((newAttachments) => {
+        setAttachments((prev) => [...prev, ...newAttachments]);
+        setFileNote('');
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao carregar arquivo:', err);
+      })
+      .finally(() => {
+        setIsUploading(false);
+      });
+  };
+
+  const handleAddLink = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!linkUrl.trim()) return;
+
+    let formattedUrl = linkUrl.trim();
+    if (!/^https?:\/\//i.test(formattedUrl)) {
+      formattedUrl = `https://${formattedUrl}`;
+    }
+
+    const defaultTitle =
+      linkName.trim() ||
+      formattedUrl.replace(/^https?:\/\//i, '').split('/')[0] ||
+      'Link Externo';
+
+    const newAttachment: CardAttachment = {
+      id: `att-link-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`,
+      name: defaultTitle,
+      url: formattedUrl,
+      uploadedAt: new Date().toISOString(),
+      notes: fileNote.trim() || undefined,
+      isLink: true,
+      type: 'link',
+    };
+
+    setAttachments((prev) => [...prev, newAttachment]);
+    setLinkUrl('');
+    setLinkName('');
+    setFileNote('');
+  };
+
+  const handleDeleteAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
+
+  const getAttachmentIcon = (att: CardAttachment) => {
+    if (att.isLink) {
+      return <ExternalLink className="w-4 h-4 text-emerald-400 shrink-0" />;
+    }
+    const type = att.type?.toLowerCase() || '';
+    const name = att.name.toLowerCase();
+
+    if (type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(name)) {
+      return <FileImage className="w-4 h-4 text-sky-400 shrink-0" />;
+    }
+    if (type.startsWith('video/') || /\.(mp4|mov|webm|mkv|avi)$/i.test(name)) {
+      return <Film className="w-4 h-4 text-purple-400 shrink-0" />;
+    }
+    if (type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac)$/i.test(name)) {
+      return <Music className="w-4 h-4 text-amber-400 shrink-0" />;
+    }
+    if (type.includes('pdf') || name.endsWith('.pdf')) {
+      return <FileText className="w-4 h-4 text-rose-400 shrink-0" />;
+    }
+    return <File className="w-4 h-4 text-cyan-400 shrink-0" />;
+  };
+
+  const isImageAttachment = (att: CardAttachment) => {
+    if (att.isLink) return false;
+    const type = att.type?.toLowerCase() || '';
+    const name = att.name.toLowerCase();
+    return type.startsWith('image/') || /\.(png|jpe?g|gif|webp|svg|bmp)$/i.test(name);
+  };
+
   // Stage advance / back inside modal
   const prevStage = getPreviousStage(stage);
   const nextStage = getNextStage(stage);
@@ -176,6 +318,7 @@ export const CardModal: React.FC<CardModalProps> = ({
       tags,
       checklist,
       notes: notes.trim(),
+      attachments,
       stage,
       createdAt: card ? card.createdAt : new Date().toISOString().split('T')[0],
       updatedAt: new Date().toISOString(),
@@ -552,6 +695,249 @@ export const CardModal: React.FC<CardModalProps> = ({
             ></textarea>
           </div>
 
+          {/* Files & History Attachments Section */}
+          <div className="bg-[#050c1c] p-4 rounded-xl border border-cyan-950/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-cyan-400" />
+                <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                  Arquivos & Histórico de Anexos
+                </label>
+              </div>
+              <span className="text-[11px] font-mono text-cyan-400 font-semibold px-2 py-0.5 rounded-full bg-cyan-950/60 border border-cyan-800/50">
+                {attachments.length} {attachments.length === 1 ? 'item' : 'itens'}
+              </span>
+            </div>
+
+            {/* Sub-tabs: Upload or Link */}
+            <div className="flex items-center gap-1.5 bg-[#030712] p-1 rounded-lg border border-cyan-950/60">
+              <button
+                type="button"
+                onClick={() => setAttachmentTab('upload')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  attachmentTab === 'upload'
+                    ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Upload de Arquivos</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAttachmentTab('link')}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                  attachmentTab === 'link'
+                    ? 'bg-cyan-950/70 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <LinkIcon className="w-3.5 h-3.5" />
+                <span>Link Externo (Drive, Figma, Docs)</span>
+              </button>
+            </div>
+
+            {/* Note / Context Input for Attachment */}
+            <div>
+              <input
+                type="text"
+                value={fileNote}
+                onChange={(e) => setFileNote(e.target.value)}
+                placeholder="Identificação/versão opcional (ex: 'Roteiro v2', 'Capa aprovada', 'Briefing')..."
+                className="w-full bg-[#030712] text-slate-200 placeholder-slate-600 rounded-lg px-3 py-1.5 border border-cyan-950/60 focus:border-cyan-400 outline-none text-xs"
+              />
+            </div>
+
+            {/* Mode 1: File Upload Box */}
+            {attachmentTab === 'upload' && (
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFile(true);
+                }}
+                onDragLeave={() => setIsDraggingFile(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFile(false);
+                  handleFileUpload(e.dataTransfer.files);
+                }}
+                className={`border-2 border-dashed rounded-xl p-4 text-center transition-all cursor-pointer ${
+                  isDraggingFile
+                    ? 'border-cyan-400 bg-cyan-950/30 scale-[1.01]'
+                    : 'border-cyan-950/80 hover:border-cyan-800/80 bg-[#030712]/60'
+                }`}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => handleFileUpload(e.target.files)}
+                />
+                <div className="flex flex-col items-center justify-center gap-1.5">
+                  <div className="p-2 rounded-full bg-cyan-500/10 text-cyan-400">
+                    {isUploading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-5 h-5" />
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-300 font-medium">
+                    {isUploading
+                      ? 'Processando e anexando arquivos...'
+                      : 'Clique ou arraste arquivos aqui para o histórico'}
+                  </p>
+                  <p className="text-[10px] text-slate-500">
+                    Suporta imagens, PDFs, roteiros, planilhas, vídeos e áudios
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Mode 2: Link Input */}
+            {attachmentTab === 'link' && (
+              <div className="space-y-2 bg-[#030712]/60 p-3 rounded-xl border border-cyan-950/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={linkName}
+                    onChange={(e) => setLinkName(e.target.value)}
+                    placeholder="Nome do link (ex: Pasta do Google Drive)"
+                    className="bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs"
+                  />
+                  <input
+                    type="text"
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="URL (ex: drive.google.com/...)"
+                    className="bg-[#050c1c] text-slate-200 placeholder-slate-500 rounded-lg px-3 py-1.5 border border-cyan-950/80 focus:border-cyan-400 outline-none text-xs font-mono"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddLink}
+                  disabled={!linkUrl.trim()}
+                  className={`w-full py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
+                    linkUrl.trim()
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/30 cursor-pointer'
+                      : 'bg-slate-900/50 text-slate-600 border border-transparent cursor-not-allowed'
+                  }`}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Anexar Link ao Histórico</span>
+                </button>
+              </div>
+            )}
+
+            {/* List of Attached Files & History */}
+            {attachments.length > 0 && (
+              <div className="space-y-2 pt-1">
+                <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
+                  Arquivos Registrados no Histórico ({attachments.length}):
+                </span>
+                <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="flex items-center justify-between p-2 rounded-xl bg-[#030712] border border-cyan-950/70 hover:border-cyan-900/70 transition-colors group"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1 mr-2">
+                        {isImageAttachment(att) ? (
+                          <div
+                            onClick={() => setPreviewAttachment(att)}
+                            className="w-8 h-8 rounded-lg bg-[#071328] border border-cyan-900/50 overflow-hidden shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Clique para ampliar"
+                          >
+                            <img
+                              src={att.url}
+                              alt={att.name}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                        ) : (
+                          <div className="w-8 h-8 rounded-lg bg-[#071328] border border-cyan-900/50 flex items-center justify-center shrink-0">
+                            {getAttachmentIcon(att)}
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="text-xs font-medium text-slate-200 truncate block group-hover:text-cyan-300 transition-colors"
+                              title={att.name}
+                            >
+                              {att.name}
+                            </span>
+                            {att.isLink && (
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 shrink-0">
+                                Link
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2 text-[10px] text-slate-500">
+                            {att.size && <span>{formatFileSize(att.size)}</span>}
+                            <span>{formatDateTimeBR(att.uploadedAt)}</span>
+                            {att.notes && (
+                              <span className="text-cyan-400/80 font-medium truncate max-w-[150px]">
+                                • {att.notes}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Attachment action buttons */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {isImageAttachment(att) && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewAttachment(att)}
+                            className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#0b1b36] transition-colors cursor-pointer"
+                            title="Visualizar imagem"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {att.isLink ? (
+                          <a
+                            href={att.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-1 rounded text-slate-400 hover:text-emerald-400 hover:bg-[#0b1b36] transition-colors cursor-pointer inline-flex items-center"
+                            title="Abrir link externo"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        ) : (
+                          <a
+                            href={att.url}
+                            download={att.name}
+                            className="p-1 rounded text-slate-400 hover:text-cyan-300 hover:bg-[#0b1b36] transition-colors cursor-pointer inline-flex items-center"
+                            title="Baixar arquivo"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                          </a>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteAttachment(att.id)}
+                          className="p-1 rounded text-slate-500 hover:text-red-400 hover:bg-[#1a0c14] transition-colors cursor-pointer"
+                          title="Remover anexo"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Delete Confirmation Alert */}
           {showDeleteConfirm && (
             <div className="p-3 bg-red-950/60 border border-red-800/80 rounded-xl flex items-center justify-between gap-3">
@@ -628,6 +1014,50 @@ export const CardModal: React.FC<CardModalProps> = ({
             </div>
           </div>
         </form>
+
+        {/* Image Preview Lightbox */}
+        {previewAttachment && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md"
+            onClick={() => setPreviewAttachment(null)}
+          >
+            <div
+              className="relative max-w-3xl max-h-[85vh] bg-[#070e20] border border-cyan-500/50 rounded-2xl overflow-hidden shadow-2xl flex flex-col p-2"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between p-2 border-b border-cyan-950 text-slate-200">
+                <span className="text-xs font-semibold truncate mr-4">
+                  {previewAttachment.name}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPreviewAttachment(null)}
+                  className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="p-2 flex items-center justify-center overflow-auto max-h-[70vh]">
+                <img
+                  src={previewAttachment.url}
+                  alt={previewAttachment.name}
+                  className="max-h-[65vh] max-w-full rounded-lg object-contain"
+                />
+              </div>
+              <div className="flex items-center justify-between p-2 pt-1 border-t border-cyan-950 text-[11px] text-slate-400">
+                <span>{previewAttachment.notes || 'Sem observação'}</span>
+                <a
+                  href={previewAttachment.url}
+                  download={previewAttachment.name}
+                  className="px-3 py-1 rounded bg-cyan-500 text-slate-950 font-bold text-xs hover:bg-cyan-400 inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>Baixar</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
